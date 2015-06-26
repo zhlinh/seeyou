@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+	
+    <RelativeLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:layout_marginLeft="15dp">
+
+        <TextView
+            android:id="@+id/chat_my_media_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="15dp"
+            android:text="name" />
+
+        <Button
+            android:id="@+id/chat_my_media_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignTop="@+id/chat_my_media_name"
+            android:layout_marginRight="5dp"
+            android:layout_toLeftOf="@+id/chat_my_media_name"
+            android:background="@drawable/balon_out"
+            android:text="音频" />
+        
+    </RelativeLayout>
+
+</LinearLayout>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#f0ffff"
+    android:orientation="vertical" >
+
+    <!--顶部的状态栏-->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/black_light" >
+
+        <TextView
+            android:id="@+id/chatter_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
+            android:textColor="#fff"
+            android:textSize="24sp" />
+
+    </RelativeLayout>
+
+    <ListView
+        android:id="@+id/chat_listview"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#fff"
+        android:cacheColorHint="#00000000"
+        android:divider="@null"
+        android:listSelector="#00000000" />
+
+    <RelativeLayout
+        android:id="@+id/chat_bottom_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="40dp"
+        android:background="#ffffff"
+        android:gravity="bottom"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/send_record_btn"
+            android:layout_marginLeft="10dp"
+            android:layout_width="40dp"
+            android:layout_height="30dp"
+            android:layout_centerVertical="true"
+            android:background="@drawable/record_btn" />
+
+        <Button
+            android:id="@+id/send_image_btn"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp"
+            android:layout_centerVertical="true"
+            android:background="@drawable/image_btn"
+            android:visibility="visible" />
+
+        <Button
+            android:id="@+id/send_btn"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp"
+            android:background="@drawable/send_btn"
+            android:visibility="invisible" />
+
+        <EditText
+            android:id="@+id/chat_edt"
+            android:layout_width="20dp"
+            android:layout_height="40dp"
+            android:layout_toLeftOf="@+id/send_btn"
+            android:layout_toRightOf="@+id/send_record_btn"
+            android:layout_alignParentBottom="true"
+            android:inputType="textMultiLine"
+            android:textSize="16sp"
+            android:ems="6" />
+
+
+    </RelativeLayout>
+
+</LinearLayout>

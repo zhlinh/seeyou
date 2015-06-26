@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#ffffff</color>
+    <color name="gray">#AAAAAA</color>
+    <color name="gray_small">#D5D5D5</color>
+    <color name="gray_light">#EBEBEB</color>
+    <color name="gray_location">#e4e3de</color>
+    <color name="gray_dark">#575757</color>
+    <color name="tab_click_blue">#2668D1</color>
+    <color name="black">#000000</color>
+    <color name="black_light">#303030</color>
+    <color name="actionbar_background">#33A3DC</color>
+    <color name="click_btn_color">#CAE1FF</color>
+    <color name="actionbar_text">#ffffff</color>
+    <color name="light_blue">#377bee</color>
+    <color name="gray_blue">#C8D3E6</color>
+    <color name="green">#32CD32</color>
+    <color name="green_dark">#54B128</color>
+    <color name="green_lit">#12C414</color>
+    <color name="radio_button_selected_color">#ff33b5e5</color>
+    <color name="radio_button_unselected_color">@android:color/transparent</color>
+</resources>
