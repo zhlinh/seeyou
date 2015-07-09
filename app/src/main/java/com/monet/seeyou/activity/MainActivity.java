@@ -175,9 +175,10 @@ public class MainActivity extends Activity {
                 String tmp = MyApplication.appInstance.generateMyMessage(
                         "Hello", ON_LINE).toJOString();
                 //DatagramPacket是UDP方式，Stream是TCP方式
+                // TODO　尝试发送组播消息
+                InetAddress group = InetAddress.getByName("224.0.0.1"); // 组播地址
                 DatagramPacket dgp = new DatagramPacket(tmp.getBytes("gbk"),
-                        tmp.length(), InetAddress.getByName("255.255.255.255"),
-                        MESSAGE_PORT);
+                        tmp.length(), group, MESSAGE_PORT);
                 // 除了初始化之外，MulticastSocket 和 DatagramSocket 的使用方式几乎一样。而实际上前者就是后者的子类。
                 multicastSocket.send(dgp);
                 Log.i("发送者", "成功发送");
@@ -269,6 +270,7 @@ public class MainActivity extends Activity {
             TextView userName;
             TextView userIp;
             ImageView userIcon;
+            TextView routerIp;
         }
     }
 
@@ -320,9 +322,7 @@ public class MainActivity extends Activity {
         }
     }
 
-
-
-
+    //按两次Back键退出程序
     long oldTime;
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {

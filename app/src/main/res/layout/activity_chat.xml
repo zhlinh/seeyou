@@ -19,7 +19,7 @@
             android:layout_centerVertical="true"
             android:layout_marginLeft="10dp"
             android:textColor="#fff"
-            android:textSize="24sp" />
+            android:textSize="23sp" />
 
     </RelativeLayout>
 

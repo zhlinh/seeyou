@@ -7,6 +7,7 @@ import android.os.Environment;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.Random;
 
 /**
@@ -16,7 +17,7 @@ import java.util.Random;
  *
  */
 public class Media {
-    private String sendPath, receivePath;//音频文件保存地址
+    private String appPath, sendPath, receivePath;//音频文件保存地址
     private String name;//储存文件的名字
     private MediaRecorder myRecorder;
     private MediaPlayer myPlayer;
@@ -29,11 +30,17 @@ public class Media {
                 Environment.MEDIA_MOUNTED)) {
             //设置要发送的录音的保存路径
             try {
-                sendPath = Environment.getExternalStorageDirectory().
-                        getCanonicalPath().toString() + "/SeeYouMessageMediaSend";
-                File files = new File(sendPath);
-                if (!files.exists()) {
-                    files.mkdir();
+                //建立两层目录时需要逐层建立
+                appPath = Environment.getExternalStorageDirectory().
+                        getCanonicalPath().toString() + "/SeeYou";
+                File file1 = new File(appPath);
+                if (!file1.exists()) {
+                    file1.mkdir();
+                }
+                sendPath = appPath + "/MessageMediaSend";
+                File file2 = new File(sendPath);
+                if (!file2.exists()) {
+                    file2.mkdir();
                 }
             } catch (Exception e) {
                 e.getStackTrace();
@@ -44,12 +51,17 @@ public class Media {
                 Environment.MEDIA_MOUNTED)) {
             //设置接收到的录音存放的路径
             try {
-                receivePath = Environment.getExternalStorageDirectory()
-                        .getCanonicalPath().toString()
-                        + "/SeeYouMessageMediaReceive";
-                File files = new File(receivePath);
-                if (!files.exists()) {
-                    files.mkdir();
+                //建立两层目录时需要逐层建立
+                appPath = Environment.getExternalStorageDirectory().
+                        getCanonicalPath().toString() + "/SeeYou";
+                File file1 = new File(appPath);
+                if (!file1.exists()) {
+                    file1.mkdir();
+                }
+                receivePath = appPath + "/MessageMediaReceive";
+                File file2 = new File(receivePath);
+                if (!file2.exists()) {
+                    file2.mkdir();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -64,7 +76,7 @@ public class Media {
         myRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);//设置编码格式
 
         this.name = "AND" + getRandomId() + new SimpleDateFormat(
-                "yyyyMMddHHmmss").format(System
+                "yyyyMMddHHmmss", Locale.CHINA).format(System
                 .currentTimeMillis()) + ".amr";//给文件命名：AND + 4位随机数 + 日期 + .amr
 
         String paths = sendPath + "/" + name;    //文件的绝对路径
@@ -106,20 +118,33 @@ public class Media {
 
     }
 
+    public void deleteOldFile(String paths) {
+        try {
+            File file = new File(paths);
+            if (file.exists()) {
+               file.delete();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
     public static String getRandomId() {
         return random.nextInt(9999) + "";
     }
 
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public String getSendPath() {
-        return sendPath;
+        return this.sendPath;
     }
 
     public String getReceivePath() {
-        return receivePath;
+        return this.receivePath;
     }
 }
 

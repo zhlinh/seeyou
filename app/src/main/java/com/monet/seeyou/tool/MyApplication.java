@@ -41,8 +41,8 @@ public class MyApplication extends Application {
     }
 
     // 需要import .seeyou.model.UdpMessage
-    public UdpMessage generateMyMessage(String msg,int type){
-        UdpMessage message=new UdpMessage();
+    public UdpMessage generateMyMessage(String msg,int type) {
+        UdpMessage message = new UdpMessage();
         message.setType(type);
         message.setSenderName(getMyName());
         message.setDestIp("");

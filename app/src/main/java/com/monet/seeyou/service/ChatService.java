@@ -80,6 +80,9 @@ public class ChatService extends Service {
         // 初始化socket
         try {
             multicastSocket = new MulticastSocket(MESSAGE_PORT);
+            // TODO 尝试用组播的方式
+            InetAddress group = InetAddress.getByName("224.0.0.1"); // 该地址为组播专用地址
+            multicastSocket.joinGroup(group);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -232,11 +235,12 @@ public class ChatService extends Service {
     }
 
     /**
-     * 在局域网内广播一条自己上线的消息（即目的地址为"255.255.255.255")
+     * 如果在局域网内广播一条自己上线的消息，则目的地址为"255.255.255.255"
+     * 若发送组播消息，则目的地址为"224.0.0.1"
      */
     public void onLine() {
         send(MyApplication.appInstance.generateMyMessage("", ON_LINE)
-                .toJOString(), "255.255.255.255");
+                .toJOString(), "224.0.0.1");
         Log.i("发送者", "我上线啦！");
     }
 

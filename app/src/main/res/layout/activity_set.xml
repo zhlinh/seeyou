@@ -18,7 +18,7 @@
             android:layout_centerVertical="true"
             android:layout_marginLeft="10dp"
             android:textColor="#fff"
-            android:textSize="24sp"
+            android:textSize="23sp"
             android:text="个人资料"/>
 
 
@@ -88,7 +88,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="50dp"
         android:text="确认" 
-        android:textSize="24dp"
+        android:textSize="23dp"
         android:textColor="@color/white"
         android:gravity="center"/>
         

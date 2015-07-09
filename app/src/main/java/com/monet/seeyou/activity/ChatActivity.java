@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Queue;
 
 public class ChatActivity extends Activity implements OnClickListener {
-    private TextView chatterNameView;
+    private TextView chatterNameView,recordHintView;
     private ListView listView;
     private Button sendBtn, mediaBtn;
     private Button imageBtn;
@@ -74,6 +74,9 @@ public class ChatActivity extends Activity implements OnClickListener {
     public static final int RECEIVE_MEDIA = 106;
     public static final int REQUEST_SEND_MEDIA = 104;
     public static final int TEXT_MESSAGE = 103;
+    private boolean isVoiceRecording = false;
+    private boolean isCanceled = false;
+    private float downY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,11 +111,11 @@ public class ChatActivity extends Activity implements OnClickListener {
         sendBtn.setOnClickListener(this);
         final Dialog dialog = new Dialog(ChatActivity.this, R.style.MyDialog);
         dialog.setContentView(R.layout.activity_record);
+        recordHintView = (TextView) dialog.findViewById(R.id.record_hint);
 
         msgEdt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
@@ -124,37 +127,62 @@ public class ChatActivity extends Activity implements OnClickListener {
                     imageBtn.setVisibility(View.INVISIBLE);
                     sendBtn.setVisibility(View.VISIBLE);
                 }
-
-
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
+
         mediaBtn.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        isVoiceRecording = true;
+                        downY = event.getY();
+                        //开始录音
+                        recordHintView.setText("向上滑动取消发送");
                         dialog.show();
                         media.startRecord();
                         break;
+                    case MotionEvent.ACTION_MOVE:
+                        float moveY = event.getY();
+                        if (downY - moveY > 50) {
+                            isCanceled = true;
+                            recordHintView.setText("松开取消发送");
+                        }
+                        if (downY - moveY < 20) {
+                            isCanceled = false;
+                            recordHintView.setText("向上滑动取消发送");
+                        }
+                        break;
                     case MotionEvent.ACTION_UP:
                         dialog.dismiss();
-                        media.stopRecord();
-
-                        sendMediaRecord(media.getName());
-                        //此处添加发送音频  sendMediaRecord(media.getName());
-                        //		该函数包含（1）把音频发送到指定的ip（先发送音频通知，通知对方开通tcp端口接收）
-                        //			        （2）刷新聊天界面，在界面上添加一条语音消息
-                        //			        （3）设置点击事件，点击那条语音消息，就会播放语音
+                        if (isVoiceRecording) {
+                            if (isCanceled) {
+                                //手指在按钮之外松开，停止 录音
+                                media.stopRecord();
+                                //取消发送应该删除旧录音
+                                media.deleteOldFile(media.getSendPath() + "/" + media.getName());
+                            } else {
+                                //手指在按钮上松开，停止并发送录音
+                                media.stopRecord();
+                                //发送音频  sendMediaRecord(media.getName());
+                                //		该函数包含（1）把音频发送到指定的ip（先发送音频通知，通知对方开通tcp端口接收）
+                                //			        （2）刷新聊天界面，在界面上添加一条语音消息
+                                //			        （3）设置点击事件，点击那条语音消息，就会播放语音
+                                sendMediaRecord(media.getName());
+                            }
+                        }
+                        isVoiceRecording = false;
                         break;
                 }
                 return false;
             }
         });
+
+
 
         imageBtn.setOnClickListener(new OnClickListener() {
             @Override
@@ -206,7 +234,7 @@ public class ChatActivity extends Activity implements OnClickListener {
                  *   selection   	SQL WHERE clause.
                  *   selectionArgs	The arguments to selection, if any ?s are pesent
                  *   sortOrder   	SQL ORDER BY clause.
-                */
+                 */
                 String[] projection = {MediaStore.Images.Media.DATA};
                 CursorLoader cursorLoader = new CursorLoader(this,uri, projection, null, null, null);
                 Cursor cursor = cursorLoader.loadInBackground();
@@ -245,7 +273,7 @@ public class ChatActivity extends Activity implements OnClickListener {
      * 发送音频消息
      */
     private void sendMediaRecord(String name){
-		/*mediaName = media.getSendPath() + "/" + name;
+        /*mediaName = media.getSendPath() + "/" + name;
 		String m = (new File(mediaName)).getName();*/
         UdpMessage msgTmp = MyApplication.appInstance.generateMyMessage(name, REQUEST_SEND_MEDIA);
         binder.sendMsg(msgTmp, chatter.getIp());
@@ -473,8 +501,8 @@ public class ChatActivity extends Activity implements OnClickListener {
             }
 
             /**
-            * 聊天界面各种消息的内容显示
-            */
+             * 聊天界面各种消息的内容显示
+             */
             switch (type) {
                 case owner:
                     UdpMessage message = myMessages.get(position);
