@@ -1,40 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical" >
-    
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/send_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/chat_text_date_style"/>
+    </LinearLayout>
+
     <RelativeLayout 
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        >
+        android:layout_marginTop="5dp"
+        android:layout_marginLeft="5dp">
 
-        <RelativeLayout
-            android:background="@drawable/balon_in"
+        <ImageView
+            android:id="@+id/chat_other_head"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:background="@drawable/ic_launcher"/>
+
+        <TextView
+            android:id="@+id/chat_other_txt"
+            android:background="@drawable/chatfrom_bg"
+            android:layout_toRightOf="@+id/chat_other_head"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
-            android:layout_alignTop="@+id/chat_other_name"
-            android:layout_toRightOf="@+id/chat_other_name">
-          
-         <TextView
-             android:id="@+id/chat_other_txt"
-             android:layout_width="wrap_content"
-             android:layout_height="wrap_content"
-             android:layout_centerHorizontal="true"
-             android:layout_marginLeft="50dp"
-             android:layout_centerVertical="true"
-             android:maxEms="6"
-             android:text="聊天内容" />
+            android:layout_marginLeft="10dp"
+            style="@style/chat_content_style"
+            android:text="聊天内容" />
            
-       </RelativeLayout>
 
         <TextView
             android:id="@+id/chat_other_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="15dp"
+            android:layout_below="@id/chat_other_head"
+            android:layout_alignParentLeft="true"
+            android:layout_toLeftOf="@id/chat_other_txt"
+            style="@style/chat_text_name_style"
             android:text="姓名" />
         
     </RelativeLayout>

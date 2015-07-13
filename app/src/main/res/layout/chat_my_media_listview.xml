@@ -3,32 +3,57 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-	
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/send_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/chat_text_date_style"/>
+    </LinearLayout>
+
     <RelativeLayout 
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:layout_marginLeft="15dp">
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="5dp">
 
-        <TextView
-            android:id="@+id/chat_my_media_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ImageView
+            android:id="@+id/chat_my_head"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:focusable="false"
             android:layout_alignParentRight="true"
-            android:layout_marginRight="15dp"
-            android:text="name" />
+            android:layout_alignParentTop="true"
+            android:background="@drawable/ic_launcher"/>
 
         <Button
             android:id="@+id/chat_my_media_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignTop="@+id/chat_my_media_name"
-            android:layout_marginRight="5dp"
-            android:layout_toLeftOf="@+id/chat_my_media_name"
-            android:background="@drawable/balon_out"
+            android:layout_marginRight="10dp"
+            android:layout_toLeftOf="@+id/chat_my_head"
+            android:background="@drawable/chatto_bg"
+            style="@style/chat_content_style"
             android:text="音频" />
-        
+
+        <TextView
+            android:id="@+id/chat_my_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/chat_my_head"
+            android:layout_alignParentRight="true"
+            android:layout_toRightOf="@id/chat_my_media_button"
+            style="@style/chat_text_name_style"
+            android:text="姓名" />
+
+
+
     </RelativeLayout>
 
 </LinearLayout>

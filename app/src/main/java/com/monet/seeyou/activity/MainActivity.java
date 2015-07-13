@@ -47,6 +47,7 @@ import java.util.List;
  */
 
 public class MainActivity extends Activity {
+    public static final String TAG = "MainAct";
     public static final int MESSAGE_PORT = 2425;
     public static final int ON_LINE = 101;
     public static final String ACTION_REFRESH= "com.monet.seeyou.refresh";
@@ -148,15 +149,15 @@ public class MainActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
-                if(binded){
+                if (binded) {
                     unbindService(myServiceConnection);
-                    binded=false;
+                    binded = false;
                 }
                 Intent intent = new Intent(MainActivity.this, ChatActivity.class);
                 User chatter = users.get(position);
                 intent.putExtra("IP", chatter.getIp());
-                intent.putExtra("DeviceCode" , chatter.getDeviceCode());
-                intent.putExtra("name",chatter.getName());
+                intent.putExtra("DeviceCode", chatter.getDeviceCode());
+                intent.putExtra("name", chatter.getName());
                 startActivity(intent);
             }
         });
@@ -175,10 +176,9 @@ public class MainActivity extends Activity {
                 String tmp = MyApplication.appInstance.generateMyMessage(
                         "Hello", ON_LINE).toJOString();
                 //DatagramPacket是UDP方式，Stream是TCP方式
-                // TODO　尝试发送组播消息
-                InetAddress group = InetAddress.getByName("224.0.0.1"); // 组播地址
+                // 广播自己已经上线
                 DatagramPacket dgp = new DatagramPacket(tmp.getBytes("gbk"),
-                        tmp.length(), group, MESSAGE_PORT);
+                        tmp.length(), InetAddress.getByName("255.255.255.255"), MESSAGE_PORT);
                 // 除了初始化之外，MulticastSocket 和 DatagramSocket 的使用方式几乎一样。而实际上前者就是后者的子类。
                 multicastSocket.send(dgp);
                 Log.i("发送者", "成功发送");
@@ -251,12 +251,12 @@ public class MainActivity extends Activity {
                         viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
                         MemoryCache.getInstance().put(tmp.getDeviceCode(), bitmap1);//放入缓存中
                         if(!tmp.isRefreshIcon()){
-                            reFreashIcon(tmp, viewHolder.userIcon);
+                            reFreshIcon(tmp, viewHolder.userIcon);
                         }
                     }else{
                         //文件中也没有
                         viewHolder.userIcon.setImageResource(R.drawable.ic_launcher);
-                        reFreashIcon(tmp, viewHolder.userIcon);
+                        reFreshIcon(tmp, viewHolder.userIcon);
                     }
                 }else{
                     //若缓存中有图片
@@ -270,6 +270,7 @@ public class MainActivity extends Activity {
             TextView userName;
             TextView userIp;
             ImageView userIcon;
+            //TODO 加入显示所连接的routerIp
             TextView routerIp;
         }
     }
@@ -277,7 +278,7 @@ public class MainActivity extends Activity {
     /**
      * 刷新用户头像
      */
-    public void reFreashIcon(User userTmp, View view){
+    public void reFreshIcon(User userTmp, View view){
         if(binder != null){
             //打开一个接收头像的服务端
             IconTcpServer ts = new IconTcpServer(userTmp);
@@ -286,8 +287,6 @@ public class MainActivity extends Activity {
             //发送头像请求消息
             UdpMessage message = MyApplication.appInstance.generateMyMessage("", ChatService.REQUIRE_ICON);
             binder.sendMsg(message, userTmp.getIp());
-
-
         }
     }
 
@@ -348,7 +347,6 @@ public class MainActivity extends Activity {
         super.onRestart();
         //修改完设置后，刷新自己
         myself.setName(MyApplication.appInstance.getMyName());
-
         adapter = new UserAdapter(MainActivity.this, R.layout.item_list, users);
         listView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
@@ -363,7 +361,7 @@ public class MainActivity extends Activity {
             binded = false;
         }
         stopService(new Intent(MainActivity.this, ChatService.class));
-        Log.i("Activity", "activity被销毁啊！");
+        Log.i(TAG, "Activity被销毁啊！");
     }
 
 }

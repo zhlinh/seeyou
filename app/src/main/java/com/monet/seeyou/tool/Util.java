@@ -12,6 +12,9 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
+import java.text.DecimalFormat;
+import java.util.Calendar;
+
 /**
  * 存放一些工具函数
  *
@@ -56,4 +59,19 @@ public class Util {
             return bitmap;
         }
     }
+
+    public static String getDate() {
+        Calendar c = Calendar.getInstance();
+        DecimalFormat df = new DecimalFormat("00");
+
+        String year = String.valueOf(c.get(Calendar.YEAR));
+        String month = String.valueOf(c.get(Calendar.MONTH));
+        String day = String.valueOf(c.get(Calendar.DAY_OF_MONTH) + 1);
+        String hour = String.valueOf(c.get(Calendar.HOUR_OF_DAY));
+        String mins = df.format(c.get(Calendar.MINUTE));
+        StringBuffer sbBuffer = new StringBuffer();
+        sbBuffer.append(year + "-" + month + "-" + day + " " + hour + ":" + mins);
+        return sbBuffer.toString();
+    }
+
 }

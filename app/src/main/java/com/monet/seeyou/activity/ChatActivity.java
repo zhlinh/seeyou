@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Queue;
 
 public class ChatActivity extends Activity implements OnClickListener {
+    public static final String ACTION_HEARTBEAT = "com.monet.seeyou.heartbeat";
+    public static final String ACTION_NOTIFY_DATA = "com.monet.seeyou.notifydata";
     private TextView chatterNameView,recordHintView;
     private ListView listView;
     private Button sendBtn, mediaBtn;
@@ -327,8 +329,8 @@ public class ChatActivity extends Activity implements OnClickListener {
 
     private void initReceiver() {
         IntentFilter filter = new IntentFilter();
-        filter.addAction(RefreshBroadcastReceiver.ACTION_NOTIFY_DATA);
-        filter.addAction(RefreshBroadcastReceiver.ACTION_HEARTBEAT);
+        filter.addAction(ACTION_NOTIFY_DATA);
+        filter.addAction(ACTION_HEARTBEAT);
         registerReceiver(receiver, filter);
     }
 
@@ -338,8 +340,6 @@ public class ChatActivity extends Activity implements OnClickListener {
      *
      */
     public class RefreshBroadcastReceiver extends BroadcastReceiver {
-        public static final String ACTION_HEARTBEAT = "com.monet.seeyou.heartbeat";
-        public static final String ACTION_NOTIFY_DATA = "com.monet.seeyou.notifydata";
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -367,7 +367,7 @@ public class ChatActivity extends Activity implements OnClickListener {
 
     /**
      * 遍历从service传过来的消息队列，根据消息的type对其进行不同处理
-     * TEXT_MESSAGE：普通文本消息，则加入到myMessages队列
+     * TEXT_MESSAGE, RECEIVE_MEDIA, RECEIVE_IMAGE：需要显示的消息，则加入到myMessages队列
      * @param queue
      */
     private void ergodicMessage(Queue<UdpMessage> queue) {
@@ -451,53 +451,59 @@ public class ChatActivity extends Activity implements OnClickListener {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             // ViewHolder其实就是一个自定义的结构体,定义了聊天消息layout的一些元素
-            ViewHolder holder = null;
+            ViewHolder viewHolder = null;
             int type = getItemViewType(position);
             if (convertView == null) {
-                holder = new ViewHolder();
+                viewHolder = new ViewHolder();
                 switch (type) {
                     case owner:
                         convertView = getLayoutInflater().inflate(
                                 R.layout.chat_my_listview, null);
-                        holder.txt = (TextView) convertView
+                        viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
+                        viewHolder.txt = (TextView) convertView
                                 .findViewById(R.id.chat_my_txt);
-                        holder.chatterName = (TextView) convertView
+                        viewHolder.chatterName = (TextView) convertView
                                 .findViewById(R.id.chat_my_name);
                         break;
                     case other:
                         convertView = getLayoutInflater().inflate(
                                 R.layout.chat_other_listview, null);
-                        holder.txt = (TextView) convertView
+                        viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
+                        viewHolder.txt = (TextView) convertView
                                 .findViewById(R.id.chat_other_txt);
-                        holder.chatterName = (TextView) convertView
+                        viewHolder.chatterName = (TextView) convertView
                                 .findViewById(R.id.chat_other_name);
                         break;
                     case owner_media:
                         convertView = getLayoutInflater().inflate(
                                 R.layout.chat_my_media_listview,null);
-                        holder.media = (Button) convertView.findViewById(R.id.chat_my_media_button);
-                        holder.chatterName = (TextView) convertView.findViewById(R.id.chat_my_media_name);
+                        viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
+                        viewHolder.media = (Button) convertView.findViewById(R.id.chat_my_media_button);
+                        viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_my_name);
                         break;
                     case other_media:
                         convertView = getLayoutInflater().inflate(R.layout.chat_other_media_listview, null);
-                        holder.media = (Button) convertView.findViewById(R.id.chat_other_media_button);
-                        holder.chatterName = (TextView) convertView.findViewById(R.id.chat_other_media_name);
+                        viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
+                        viewHolder.media = (Button) convertView.findViewById(R.id.chat_other_media_button);
+                        viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_other_name);
                         break;
                     case owner_image:
                         convertView = getLayoutInflater().inflate(R.layout.chat_my_image_listview, null);
-                        holder.picture = (ImageView) convertView.findViewById(R.id.chat_my_image);
-                        holder.chatterName = (TextView) convertView.findViewById(R.id.chat_my_image_name);
+                        viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
+                        viewHolder.picture = (ImageView) convertView.findViewById(R.id.chat_my_image);
+                        viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_my_name);
                         break;
                     case other_image:
                         convertView = getLayoutInflater().inflate(R.layout.chat_other_image_listview, null);
-                        holder.picture = (ImageView) convertView.findViewById(R.id.chat_other_image);
-                        holder.chatterName = (TextView) convertView.findViewById(R.id.chat_other_image_name);
+                        viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
+                        viewHolder.picture = (ImageView) convertView.findViewById(R.id.chat_other_image);
+                        viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_other_name);
                         break;
                 }
-                convertView.setTag(holder);
+                convertView.setTag(viewHolder);
             } else {
                 // converView不为空时:
-                holder = (ViewHolder) convertView.getTag();
+                viewHolder = (ViewHolder) convertView.getTag();
             }
 
             /**
@@ -506,25 +512,28 @@ public class ChatActivity extends Activity implements OnClickListener {
             switch (type) {
                 case owner:
                     UdpMessage message = myMessages.get(position);
+                    viewHolder.sendTime.setText(message.getSendTime());
                     String content = message.getMsg();
-                    holder.txt.setText(content);
-                    holder.chatterName.setText(MyApplication.appInstance.getMyName());
+                    viewHolder.txt.setText(content);
+                    viewHolder.chatterName.setText(MyApplication.appInstance.getMyName());
                     break;
                 case other:
                     message = myMessages.get(position);
+                    viewHolder.sendTime.setText(message.getSendTime());
                     content = message.getMsg();
-                    holder.txt.setText(content);
-                    holder.chatterName.setText(chatter.getName());
+                    viewHolder.txt.setText(content);
+                    viewHolder.chatterName.setText(chatter.getName());
                     break;
                 case owner_media:
                     message = myMessages.get(position);
+                    viewHolder.sendTime.setText(message.getSendTime());
                     final String mediaName = message.getMsg(); //音频的名字
                     MediaPlayer mp = MediaPlayer.create(ChatActivity.this,Uri.parse(media.getSendPath() + "/" + mediaName));
                     int duration = mp.getDuration()/1000;
 
-                    holder.media.setText(duration+"\"" + " (((");
-                    holder.chatterName.setText(MyApplication.appInstance.getMyName());
-                    holder.media.setOnClickListener(new OnClickListener() {
+                    viewHolder.media.setText(duration+"\"" + " (((");
+                    viewHolder.chatterName.setText(MyApplication.appInstance.getMyName());
+                    viewHolder.media.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             media.startPlay(media.getSendPath() + "/" + mediaName);
@@ -534,12 +543,13 @@ public class ChatActivity extends Activity implements OnClickListener {
 
                 case other_media:
                     message = myMessages.get(position);
+                    viewHolder.sendTime.setText(message.getSendTime());
                     final String mediaName1 = message.getMsg(); //音频的名字
                     mp = MediaPlayer.create(ChatActivity.this,Uri.parse(media.getReceivePath() + "/" + mediaName1));
                     duration = mp.getDuration()/1000;
-                    holder.media.setText("))) "+duration+"\"");
-                    holder.chatterName.setText(chatter.getName());
-                    holder.media.setOnClickListener(new OnClickListener() {
+                    viewHolder.media.setText("))) "+duration+"\"");
+                    viewHolder.chatterName.setText(chatter.getName());
+                    viewHolder.media.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             media.startPlay(media.getReceivePath()+ "/" + mediaName1);
@@ -549,6 +559,7 @@ public class ChatActivity extends Activity implements OnClickListener {
 
                 case owner_image:
                     message = myMessages.get(position);
+                    viewHolder.sendTime.setText(message.getSendTime());
                     String pathTmp = message.getMsg();//图片路径
 
                     //对图片进行缩放
@@ -562,17 +573,18 @@ public class ChatActivity extends Activity implements OnClickListener {
                     int screenHeight = display.getHeight();
                     int widthScale = imageWidth / screenWidth;
                     int heightScale = imageHeight / screenHeight;
-                    int scale = widthScale > heightScale ? widthScale:heightScale;
+                    int scale = (widthScale > heightScale) ? widthScale:heightScale;
                     opts.inJustDecodeBounds= false;
                     opts.inSampleSize = scale;
                     //获取缩放后的图片，显示到聊天界面上
                     Bitmap bm = BitmapFactory.decodeFile(pathTmp,opts);
-                    holder.picture.setImageBitmap(bm);
-                    holder.chatterName.setText(MyApplication.appInstance.getMyName());
+                    viewHolder.picture.setImageBitmap(bm);
+                    viewHolder.chatterName.setText(MyApplication.appInstance.getMyName());
                     break;
 
                 case other_image:
                     message = myMessages.get(position);
+                    viewHolder.sendTime.setText(message.getSendTime());
                     pathTmp = message.getMsg();//图片路径；
                     //对图片进行缩放
                     opts = new Options();
@@ -590,9 +602,9 @@ public class ChatActivity extends Activity implements OnClickListener {
                     opts.inSampleSize = scale;
                     //获取缩放后的图片，显示到聊天界面上
                     bm = BitmapFactory.decodeFile(pathTmp,opts);
-                    holder.picture.setImageBitmap(bm);
+                    viewHolder.picture.setImageBitmap(bm);
                     Toast.makeText(getApplicationContext(), "接收到图片，保存到" + pathTmp, Toast.LENGTH_LONG);
-                    holder.chatterName.setText(chatter.getName());
+                    viewHolder.chatterName.setText(chatter.getName());
                     break;
             }
             return convertView;
@@ -600,11 +612,12 @@ public class ChatActivity extends Activity implements OnClickListener {
 
         // 将class用成类似结构体
         class ViewHolder {
-            ImageView icon;
-            TextView txt;
-            TextView chatterName;
-            Button media;
-            ImageView picture;
+            public TextView sendTime;
+            public ImageView icon;
+            public TextView txt;
+            public TextView chatterName;
+            public Button media;
+            public ImageView picture;
         }
 
     }

@@ -49,6 +49,7 @@ public class MyApplication extends Application {
         message.setMsg(msg);
         message.setDeviceCode(getDeviceCode());
         message.setOwn(true);
+        message.setSendTime(Util.getDate());
         return message;
     }
 

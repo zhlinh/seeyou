@@ -6,6 +6,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.monet.seeyou.activity.ChatActivity;
 import com.monet.seeyou.model.UdpMessage;
 import com.monet.seeyou.model.User;
 import com.monet.seeyou.tool.MyApplication;
@@ -52,14 +53,8 @@ public class ChatService extends Service {
     public static final int REPLY_SEND_IMAGE = 109;
     public static final int RECEIVE_IMAGE = 110;
 
-
-
-    public static final String ACTION_HEARTBEAT = "com.monet.seeyou.heartbeat";
-    public static final String ACTION_NOTIFY_DATA = "com.monet.seeyou.notifydata";
-
     private MulticastSocket multicastSocket = null;
     private ExecutorService executor = Executors.newFixedThreadPool(20);// 创建一个固定大小的线程池来发送消息，大小为20个线程
-
 
     private MyBinder myBinder = new MyBinder();
     public MyServer myServer = new MyServer();
@@ -80,9 +75,6 @@ public class ChatService extends Service {
         // 初始化socket
         try {
             multicastSocket = new MulticastSocket(MESSAGE_PORT);
-            // TODO 尝试用组播的方式
-            InetAddress group = InetAddress.getByName("224.0.0.1"); // 该地址为组播专用地址
-            multicastSocket.joinGroup(group);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -106,11 +98,8 @@ public class ChatService extends Service {
             while (!myServer.isInterrupted()) {
                 try {
                     multicastSocket.receive(dp);// 监听，接收消息
-
-                    String tmp = new String(dp.getData(), 0, dp.getLength(),
-                            "gbk");
+                    String tmp = new String(dp.getData(), 0, dp.getLength(), "gbk");
                     dealMsg(tmp, dp.getAddress().getHostAddress());// 解析获取到得消息
-
                     dp.setLength(data.length);
                 } catch (IOException e1) {
                     e1.printStackTrace();
@@ -168,6 +157,7 @@ public class ChatService extends Service {
                 case TEXT_MESSAGE:
                     if (messages.containsKey(hostAddress)) {
                         //获取键值Queue<UdpMessage>，再在Queue消息队列里添加消息
+                        // TODO 消息队列的管理
                         messages.get(hostAddress).add(msg);
                     } else {
                         Queue<UdpMessage> queue = new ConcurrentLinkedQueue<UdpMessage>();
@@ -229,18 +219,17 @@ public class ChatService extends Service {
             case RECEIVE_MEDIA:
             case RECEIVE_IMAGE:
                 // Log.i("广播", "刷新聊天界面啦");
-                sendBroadcast(new Intent(ACTION_NOTIFY_DATA));
+                sendBroadcast(new Intent(ChatActivity.ACTION_NOTIFY_DATA));
                 break;
         }
     }
 
     /**
      * 如果在局域网内广播一条自己上线的消息，则目的地址为"255.255.255.255"
-     * 若发送组播消息，则目的地址为"224.0.0.1"
      */
     public void onLine() {
         send(MyApplication.appInstance.generateMyMessage("", ON_LINE)
-                .toJOString(), "224.0.0.1");
+                .toJOString(), "255.255.255.255");
         Log.i("发送者", "我上线啦！");
     }
 
