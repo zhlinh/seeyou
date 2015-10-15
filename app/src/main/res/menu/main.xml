@@ -4,10 +4,9 @@
     tools:context=".MainActivity" >
     <item
         android:id="@+id/action_settings"
-        android:icon="@drawable/icon_s"
+        android:icon="@drawable/icon_set"
         android:orderInCategory="100"
         app:showAsAction="always"
         android:title="@string/action_settings"/>
-    
-    
+
 </menu>

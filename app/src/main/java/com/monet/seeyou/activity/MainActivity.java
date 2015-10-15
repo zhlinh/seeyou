@@ -64,10 +64,8 @@ public class MainActivity extends Activity {
     private UserAdapter adapter;
     private ListView listView;
 
-    /* public MyHandler myHandler = new MyHandler(); */
-   // TextView tv, user_ip;
-
-    // 顶部菜单栏的设置按钮
+    // 顶部菜单栏的定位及设置按钮
+    private Button locate;
     private Button setProfile;
     // Users列表
     private List<User> users = new ArrayList<User>();
@@ -97,10 +95,11 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //初始化自我（现用于测试）
+        // 初始化自己
         myself.setName(MyApplication.appInstance.getMyName());
         myself.setIp(MyApplication.appInstance.getLocalIp());
         myself.setDeviceCode(MyApplication.appInstance.getDeviceCode());
+        Log.e("Ip", myself.getIp());
 
         initService();// 初始化Service
         initTopBar(); //初始化顶部菜单栏
@@ -124,6 +123,7 @@ public class MainActivity extends Activity {
      */
     private void initTopBar() {
         setProfile = (Button) findViewById(R.id.set_profile);
+        locate = (Button) findViewById(R.id.locate);
 
         /**
          * 点击设置按钮，进入设置界面
@@ -135,6 +135,17 @@ public class MainActivity extends Activity {
                 startActivity(setIntent);
             }
         });
+        /**
+         * 点击定位按钮，进入定位界面
+         */
+        locate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent setIntent = new Intent(MainActivity.this, LocateActivity.class);
+                startActivity(setIntent);
+            }
+        });
+
     }
     /**
      * 初始化用户列表
@@ -177,7 +188,7 @@ public class MainActivity extends Activity {
                         "Hello", ON_LINE).toJOString();
                 //DatagramPacket是UDP方式，Stream是TCP方式
                 // 广播自己已经上线
-                DatagramPacket dgp = new DatagramPacket(tmp.getBytes("gbk"),
+                DatagramPacket dgp = new DatagramPacket(tmp.getBytes("UTF-8"),
                         tmp.length(), InetAddress.getByName("255.255.255.255"), MESSAGE_PORT);
                 // 除了初始化之外，MulticastSocket 和 DatagramSocket 的使用方式几乎一样。而实际上前者就是后者的子类。
                 multicastSocket.send(dgp);
@@ -304,9 +315,25 @@ public class MainActivity extends Activity {
             if(binder != null){
                 users.clear();
                 users.add(myself);
-                List<User> listTmp = binder.getUsers();
-                for (int i = 0; i < listTmp.size(); i++){
-                    users.add(listTmp.get(i));
+
+                List<User> list = binder.getUsers();
+//                boolean flag = true;//不添加已经存在的用户
+//                String tmpAddress = "";
+//                flag = true;//不添加已经存在的用户
+//                for(User listTmp:list){
+//                    tmpAddress = listTmp.getIp();
+//                    for(User userTmp:users){
+//                        if(userTmp.getIp().equals(tmpAddress)){
+//                            flag = false;
+//                            break;
+//                        }
+//                    }
+//                    if (flag) {
+//                        users.add(listTmp);
+//                    }
+//                }
+                for (int i = 0; i < list.size(); i++){
+                    users.add(list.get(i));
                 }
                 if(adapter == null){
                     adapter = new UserAdapter(MainActivity.this, R.layout.item_list, users);
@@ -316,7 +343,8 @@ public class MainActivity extends Activity {
             }else{
                 unbindService(myServiceConnection);
                 binded = false;
-                bindService(new Intent(MainActivity.this, ChatService.class), myServiceConnection =new MyServiceConnection(),Context.BIND_AUTO_CREATE);
+                bindService(new Intent(MainActivity.this, ChatService.class),
+                        myServiceConnection = new MyServiceConnection(), Context.BIND_AUTO_CREATE);
             }
         }
     }
@@ -347,6 +375,9 @@ public class MainActivity extends Activity {
         super.onRestart();
         //修改完设置后，刷新自己
         myself.setName(MyApplication.appInstance.getMyName());
+        // 同时刷新IP
+        myself.setIp(MyApplication.appInstance.getLocalIp());
+        Log.e("MyAPPIP", myself.getIp());
         adapter = new UserAdapter(MainActivity.this, R.layout.item_list, users);
         listView.setAdapter(adapter);
         adapter.notifyDataSetChanged();

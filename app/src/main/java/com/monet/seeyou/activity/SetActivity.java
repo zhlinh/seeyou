@@ -118,7 +118,7 @@ public class SetActivity extends Activity implements OnClickListener {
                 }
                 Editor editor = getSharedPreferences("me", MODE_PRIVATE).edit();// 把新的昵称存入文件中
                 editor.putString("name", nickName);
-                editor.commit();
+                editor.apply();
                 Toast.makeText(getApplicationContext(), "成功修改", Toast.LENGTH_LONG)
                         .show();
                 break;

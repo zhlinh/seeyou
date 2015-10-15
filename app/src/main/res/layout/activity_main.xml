@@ -18,8 +18,17 @@
             android:layout_centerVertical="true"
             android:layout_marginLeft="10dp"
             android:textColor="#fff"
-            android:textSize="23dp"
-            android:text="好友列表"/>
+            android:textSize="23sp"
+            android:text="@string/list"/>
+
+        <Button
+            android:id="@+id/locate"
+            android:layout_width="23dp"
+            android:layout_height="23dp"
+            android:layout_toLeftOf="@+id/set_profile"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/icon_loc"/>
 
         <Button
             android:id="@+id/set_profile"
@@ -28,7 +37,7 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="10dp"
-            android:background="@drawable/icon_s"/>
+            android:background="@drawable/icon_set"/>
     </RelativeLayout>
 
     <ListView

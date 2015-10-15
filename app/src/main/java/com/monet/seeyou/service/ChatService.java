@@ -98,7 +98,7 @@ public class ChatService extends Service {
             while (!myServer.isInterrupted()) {
                 try {
                     multicastSocket.receive(dp);// 监听，接收消息
-                    String tmp = new String(dp.getData(), 0, dp.getLength(), "gbk");
+                    String tmp = new String(dp.getData(), 0, dp.getLength(), "UTF-8");
                     dealMsg(tmp, dp.getAddress().getHostAddress());// 解析获取到得消息
                     dp.setLength(data.length);
                 } catch (IOException e1) {
@@ -121,10 +121,12 @@ public class ChatService extends Service {
                     user.setName(msg.getSenderName());
                     user.setIp(hostAddress);
                     user.setDeviceCode(msg.getDeviceCode());
+                    Log.e("ReceiveOnLine", user.getIp());
 
                     boolean flag = true;//不添加已经存在的用户
-                    for(User userTmp:users){
-                        if(userTmp.getIp() == hostAddress){
+                    for(User userTmp:users) {
+                        Log.e("UserIP", userTmp.getIp() + " - " + hostAddress);
+                        if (userTmp.getIp().equals(hostAddress)) {
                             flag = false;
                             break;
                         }
@@ -145,13 +147,14 @@ public class ChatService extends Service {
                     user.setDeviceCode(msg.getDeviceCode());
                     flag = true;//不添加已经存在的用户
                     for(User userTmp:users){
-                        if(userTmp.getIp() == hostAddress){
+                        if(userTmp.getIp().equals(hostAddress)){
                             flag = false;
                             break;
                         }
                     }
-                    if(flag)
+                    if (!((MyApplication.appInstance.getLocalIp()).equals(hostAddress)) && flag) {
                         users.add(user);
+                    }
                     break;
 
                 case TEXT_MESSAGE:
@@ -242,7 +245,7 @@ public class ChatService extends Service {
             public void run() {
                 try {
                     DatagramPacket dps = new DatagramPacket(
-                            msg.getBytes("gbk"), msg.length(), InetAddress
+                            msg.getBytes("UTF-8"), msg.length(), InetAddress
                             .getByName(destip), MESSAGE_PORT);
                     multicastSocket.send(dps);
 

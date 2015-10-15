@@ -4,6 +4,7 @@ package com.monet.seeyou.tool;
  * Created by Monet on 2015/6/16.
  */
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -11,6 +12,9 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.net.DhcpInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 
 import java.text.DecimalFormat;
 import java.util.Calendar;
@@ -74,4 +78,46 @@ public class Util {
         return sbBuffer.toString();
     }
 
+    /**
+     * 获取Wifi环境下的一些参数
+     */
+    public static String getSSID(Context context) {
+        // 只获取wifi地址
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);//获取WifiManager
+        //检查wifi是否开启
+        if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            // wifiInfo.getSSID得到的SSID会带双引号
+            return (wifiInfo == null) ? "NULL" : wifiInfo.getSSID().substring(1, wifiInfo.getSSID().length()-1);
+        }
+        return "NULL";
+    }
+
+     public static int getRSSI(Context context) {
+        // 只获取wifi地址
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);//获取WifiManager
+        //检查wifi是否开启
+        if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            return  (wifiInfo == null) ? 0 : wifiInfo.getRssi();
+        }
+         return  0;
+    }
+
+     public static String getServerAddress(Context context) {
+        // 只获取wifi地址
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);//获取WifiManager
+        //检查wifi是否开启
+        if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
+            DhcpInfo dhcpinfo = wifiManager.getDhcpInfo();
+            return (dhcpinfo == null) ? "NULL" : Util.formatIpAddress(dhcpinfo.serverAddress);
+        }
+        return "NULL";
+    }
+
+    // 将int格式的IP地址转换为字符串格式
+    public static String formatIpAddress(int ip) {
+        return (ip & 0xFF)+ "." + ((ip >> 8 ) & 0xFF) + "." + ((ip >> 16 ) & 0xFF)
+                    +"."+((ip >> 24 ) & 0xFF);
+    }
 }
