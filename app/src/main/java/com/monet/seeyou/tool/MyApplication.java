@@ -23,30 +23,31 @@ import java.util.Enumeration;
 
 public class MyApplication extends Application {
     public static MyApplication appInstance;//单实例模式--static
-    private String localIp;//本地的ip地址
-    private String deviceCode;//手机的唯一标识码
-
+    private String localIp; // 本地的ip地址
+    private String deviceCode; // 手机的唯一标识码
+    private int apIpLastNum; // AP的IP地址最后一位
     public static String iconPath;
-
     @Override
     public void onCreate() {
         super.onCreate();
         // 初始化, 获取IP地址，获取实例本身，获取头像地址路径，获取设备识别码
         appInstance = this;
-        localIp = getLocalIpAddress();
+        localIp = initLocalIpAddress();
+        apIpLastNum = initApIPLastNum();
+        deviceCode = initDeviceCode();
         //getFilesDir是Android内部函数
         iconPath = getFilesDir() + "/";
-        initDeviceCode();
     }
 
     // 需要import .seeyou.model.UdpMessage
-    public UdpMessage generateMyMessage(String msg,int type) {
+    public UdpMessage generateMyMessage(String msg, int type) {
         UdpMessage message = new UdpMessage();
         message.setType(type);
         message.setSenderName(getMyName());
         message.setDestIp("");
         message.setMsg(msg);
         message.setDeviceCode(getDeviceCode());
+        message.setApIpLastNum(getApIpLastNum());
         message.setOwn(true);
         message.setSendTime(Util.getDate());
         return message;
@@ -56,7 +57,7 @@ public class MyApplication extends Application {
      * 得到本机IP地址
      * @return
      */
-    private String getLocalIpAddress(){
+    private String initLocalIpAddress(){
         // 只获取wifi地址
         WifiManager wifiManage = (WifiManager) appInstance.getSystemService(Context.WIFI_SERVICE);//获取WifiManager
         //检查wifi是否开启
@@ -85,39 +86,53 @@ public class MyApplication extends Application {
     }
 
     /**
+     * 获取设备所连接的AP的IP地址的最后一位
+     */
+    private int initApIPLastNum() {
+        String tmpAP = Util.getServerAddress(this);
+        if (tmpAP != null) {
+            String tmpInt = tmpAP.substring(tmpAP.lastIndexOf(".") + 1, tmpAP.length());
+            return Integer.parseInt(tmpInt);
+        }
+        return 0;
+    }
+
+    /**
      * 获取设备唯一标识
      */
-    private void initDeviceCode(){
+    private String initDeviceCode(){
         TelephonyManager telephonyManager=(TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        setDeviceCode(telephonyManager.getDeviceId());
+        String tmpCode = null;
+        tmpCode = telephonyManager.getDeviceId();
         Log.d("=============", "DeviceId  :" + deviceCode);
         // 如果获取不了设备唯一识别码就用Mac地址代替
-        if(getDeviceCode() == null){
+        if(tmpCode == null){
             WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
             WifiInfo info = wifi.getConnectionInfo();
-            setDeviceCode(info.getMacAddress());
+            tmpCode =  info.getMacAddress();
         }
         // 获取不了Mac地址就用当前时间来代替
-        if(getDeviceCode() == null){
+        if(tmpCode == null){
             SharedPreferences.Editor editor = getSharedPreferences("me", MODE_PRIVATE).edit();
             editor.putString("deviceCode", System.currentTimeMillis()+"").apply();
-            setDeviceCode(getSharedPreferences("me", MODE_PRIVATE).getString(deviceCode, ""));
+            tmpCode = getSharedPreferences("me", MODE_PRIVATE).getString(deviceCode, "");
         }
+        return tmpCode;
     }
 
     public String getMyName() {
         return getSharedPreferences("me", MODE_PRIVATE).getString("name", "无名");
     }
-
     public String getLocalIp(){
-        if(localIp == null)
-            localIp = getLocalIpAddress();
-        return localIp;
+        this.localIp = initLocalIpAddress();
+        return this.localIp;
+    }
+    public int getApIpLastNum() {
+        this.apIpLastNum = initApIPLastNum();
+        return this.apIpLastNum;
     }
     public String getDeviceCode() {
-        return deviceCode;
-    }
-    public void setDeviceCode(String deviceCode) {
-        this.deviceCode = deviceCode;
+        this.deviceCode = initDeviceCode();
+        return this.deviceCode;
     }
 }

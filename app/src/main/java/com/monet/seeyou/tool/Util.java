@@ -88,9 +88,9 @@ public class Util {
         if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             // wifiInfo.getSSID得到的SSID会带双引号
-            return (wifiInfo == null) ? "NULL" : wifiInfo.getSSID().substring(1, wifiInfo.getSSID().length()-1);
+            return (wifiInfo == null) ? null : wifiInfo.getSSID().substring(1, wifiInfo.getSSID().length()-1);
         }
-        return "NULL";
+        return null;
     }
 
      public static int getRSSI(Context context) {
@@ -110,9 +110,9 @@ public class Util {
         //检查wifi是否开启
         if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
             DhcpInfo dhcpinfo = wifiManager.getDhcpInfo();
-            return (dhcpinfo == null) ? "NULL" : Util.formatIpAddress(dhcpinfo.serverAddress);
+            return (dhcpinfo == null) ? null : Util.formatIpAddress(dhcpinfo.serverAddress);
         }
-        return "NULL";
+        return null;
     }
 
     // 将int格式的IP地址转换为字符串格式

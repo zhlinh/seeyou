@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
         myself.setName(MyApplication.appInstance.getMyName());
         myself.setIp(MyApplication.appInstance.getLocalIp());
         myself.setDeviceCode(MyApplication.appInstance.getDeviceCode());
+        myself.setApIpLastNum(MyApplication.appInstance.getApIpLastNum());
         Log.e("Ip", myself.getIp());
 
         initService();// 初始化Service
@@ -154,7 +155,7 @@ public class MainActivity extends Activity {
         listView = (ListView) findViewById(R.id.user_list);
 
         /**
-         * 点击用户，进入聊天界面
+         * 设置用户列表，使点击用户，进入聊天界面
          */
         listView.setOnItemClickListener(new OnItemClickListener() {
             @Override
@@ -168,7 +169,8 @@ public class MainActivity extends Activity {
                 User chatter = users.get(position);
                 intent.putExtra("IP", chatter.getIp());
                 intent.putExtra("DeviceCode", chatter.getDeviceCode());
-                intent.putExtra("name", chatter.getName());
+                intent.putExtra("Name", chatter.getName());
+                intent.putExtra("ApIpLastNum", chatter.getApIpLastNum());
                 startActivity(intent);
             }
         });
@@ -176,9 +178,11 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 发送消息的一方，实际上UDP并不区分Server和Client。(现在仅用于测试，手动发送一条上线消息)
+     * 发送消息的一方，此处主要用来广播自己上线的消息
+     * 已经弃用
+     * 已改为在绑定的服务ChatService初始化时发送onLine消息
      */
-    class Client extends Thread {
+    class MyClient extends Thread {
         @Override
         public void run() {
             super.run();
@@ -227,6 +231,7 @@ public class MainActivity extends Activity {
                         .findViewById(R.id.user_list_name);
                 viewHolder.userIp = (TextView) view
                         .findViewById(R.id.user_list_ip);
+                viewHolder.userApIpLastNum = (TextView) view.findViewById(R.id.user_list_ap_ip);
                 view.setTag(viewHolder);
             } else {
                 view = convertView;
@@ -236,12 +241,13 @@ public class MainActivity extends Activity {
             // 设置用户列表中的item的显示
             viewHolder.userName.setText(tmp.getName());
             viewHolder.userIp.setText(tmp.getIp());
-
+            viewHolder.userApIpLastNum.setText("@AP" + tmp.getApIpLastNum());
+            // 设置用户头像
             if(position == 0){
                 //自己
                 Bitmap bitmap = MemoryCache.getInstance().get("me");
                 if(bitmap == null){
-                    //缓存中没有图片，则需要从文件中读出
+                    // 缓存中没有图片，则需要从文件中读出
                     bitmap = BitmapFactory.decodeFile(MyApplication.iconPath + "me");
                     if(bitmap != null){
                         //文件中存在
@@ -249,11 +255,11 @@ public class MainActivity extends Activity {
                         MemoryCache.getInstance().put("me", bitmap);
                     }
                 }else{
-                    //若缓存中有图片
+                    // 若缓存中有图片
                     viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
                 }
             }else{
-                //其他用户
+                // 其他用户
                 Bitmap bitmap1 = MemoryCache.getInstance().get(tmp.getDeviceCode());//根据用户的设备码在缓存中寻找对应的头像
                 if(bitmap1 == null){
                     //内存中没有,则在文件中查找
@@ -262,12 +268,12 @@ public class MainActivity extends Activity {
                         viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
                         MemoryCache.getInstance().put(tmp.getDeviceCode(), bitmap1);//放入缓存中
                         if(!tmp.isRefreshIcon()){
-                            reFreshIcon(tmp, viewHolder.userIcon);
+                            refreshIcon(tmp, viewHolder.userIcon);
                         }
                     }else{
                         //文件中也没有
                         viewHolder.userIcon.setImageResource(R.drawable.ic_launcher);
-                        reFreshIcon(tmp, viewHolder.userIcon);
+                        refreshIcon(tmp, viewHolder.userIcon);
                     }
                 }else{
                     //若缓存中有图片
@@ -280,16 +286,15 @@ public class MainActivity extends Activity {
         class ViewHolder {
             TextView userName;
             TextView userIp;
+            TextView userApIpLastNum;
             ImageView userIcon;
-            //TODO 加入显示所连接的routerIp
-            TextView routerIp;
         }
     }
 
     /**
      * 刷新用户头像
      */
-    public void reFreshIcon(User userTmp, View view){
+    public void refreshIcon(User userTmp, View view){
         if(binder != null){
             //打开一个接收头像的服务端
             IconTcpServer ts = new IconTcpServer(userTmp);
@@ -314,24 +319,9 @@ public class MainActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             if(binder != null){
                 users.clear();
+                // 添加自己，方便测试
                 users.add(myself);
-
                 List<User> list = binder.getUsers();
-//                boolean flag = true;//不添加已经存在的用户
-//                String tmpAddress = "";
-//                flag = true;//不添加已经存在的用户
-//                for(User listTmp:list){
-//                    tmpAddress = listTmp.getIp();
-//                    for(User userTmp:users){
-//                        if(userTmp.getIp().equals(tmpAddress)){
-//                            flag = false;
-//                            break;
-//                        }
-//                    }
-//                    if (flag) {
-//                        users.add(listTmp);
-//                    }
-//                }
                 for (int i = 0; i < list.size(); i++){
                     users.add(list.get(i));
                 }
@@ -377,7 +367,8 @@ public class MainActivity extends Activity {
         myself.setName(MyApplication.appInstance.getMyName());
         // 同时刷新IP
         myself.setIp(MyApplication.appInstance.getLocalIp());
-        Log.e("MyAPPIP", myself.getIp());
+        myself.setApIpLastNum(MyApplication.appInstance.getApIpLastNum());
+        // 和sendBroadcast(new Intent(MainActivity.ACTION_REFRESH))的作用是一样的，刷新列表
         adapter = new UserAdapter(MainActivity.this, R.layout.item_list, users);
         listView.setAdapter(adapter);
         adapter.notifyDataSetChanged();

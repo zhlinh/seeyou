@@ -11,19 +11,20 @@ import org.json.JSONObject;
  *
  */
 public class UdpMessage {
-    private String senderName;//发送者姓名
-    private String destIp;//目的地ip地址
-    private String msg;//信息内容
-    private String sendTime;//发送时间
-    private String deviceCode;//手机唯一标识码
-    private int type;//消息的类型
-    private boolean own;//判断这条消息是否是自己发送的
+    private String senderName; //发送者姓名
+    private String destIp; //目的地ip地址
+    private String msg; //信息内容
+    private String sendTime; //发送时间
+    private String deviceCode; //手机唯一标识码
+    private int apIpLastNum; //发送者所连接的AP的IP地址的最后一位
+    private int type; //消息的类型
+    private boolean own; //判断这条消息是否是自己发送的
 
     public UdpMessage(){
         setSendTime(System.currentTimeMillis()+"");
     }
 
-    public UdpMessage(String msg,boolean own){
+    public UdpMessage(String msg, boolean own){
         this();
         this.setMsg(msg);
         this.setOwn(own);
@@ -41,6 +42,7 @@ public class UdpMessage {
         msg = new String(Base64.decode(object.getString("msg").getBytes(),Base64.DEFAULT));
         setSendTime(object.getString("sendTime"));
         setDeviceCode(object.getString("deviceCode"));
+        setApIpLastNum(object.getInt("apIpLastNum"));
         type = object.getInt("type");
         object = null;//销毁
     }
@@ -54,11 +56,12 @@ public class UdpMessage {
         try {
             //有可能出现中文字符的变量都要进行base64转码，避免不规则字符导致的错误unterminated string character
             object.put("senderName", Base64.encodeToString(senderName.getBytes(), Base64.DEFAULT));
-            object.put("destIp",destIp);
-            object.put("msg",Base64.encodeToString(msg.getBytes(),Base64.DEFAULT));
-            object.put("deviceCode",getDeviceCode());
-            object.put("type",type);
-            object.put("sendTime",sendTime);
+            object.put("destIp", destIp);
+            object.put("msg", Base64.encodeToString(msg.getBytes(),Base64.DEFAULT));
+            object.put("deviceCode", getDeviceCode());
+            object.put("apIpLastNum", getApIpLastNum());
+            object.put("type", type);
+            object.put("sendTime", sendTime);
             return object.toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -108,5 +111,11 @@ public class UdpMessage {
     }
     public void setDeviceCode(String deviceCode) {
         this.deviceCode = deviceCode;
+    }
+    public int getApIpLastNum() {
+        return apIpLastNum;
+    }
+    public void setApIpLastNum(int apIpLastNum) {
+        this.apIpLastNum = apIpLastNum;
     }
 }

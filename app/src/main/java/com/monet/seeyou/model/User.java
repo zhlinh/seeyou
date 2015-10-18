@@ -11,6 +11,7 @@ public class User implements Serializable {
 
     private String name;//用户姓名
     private String ip;//用户ip地址
+    private int apIpLastNum; //用户所连接的AP的ip地址的最后一位
     private String deviceCode;//用户的唯一标识码
     private String heartTime;//用户上一次心跳时间（用于判断用户仍然在线）,十秒跳一次10,000ms
     private boolean refreshIcon;//记录是否刷新头像（登录第一次会刷新头像）
@@ -32,6 +33,12 @@ public class User implements Serializable {
     }
     public void setIp(String ip) {
         this.ip = ip;
+    }
+    public int getApIpLastNum() {
+        return apIpLastNum;
+    }
+    public void setApIpLastNum(int apIpLastNum) {
+        this.apIpLastNum = apIpLastNum;
     }
     public String getDeviceCode() {
         return deviceCode;

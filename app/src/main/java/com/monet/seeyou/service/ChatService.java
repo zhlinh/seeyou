@@ -71,21 +71,19 @@ public class ChatService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
         // 初始化socket
         try {
             multicastSocket = new MulticastSocket(MESSAGE_PORT);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        myServer.start();// 开启接收消息线程
+        // 关键，开启接收消息的线程
+        myServer.start();
         onLine();
-
     }
 
     /**
-     * 接收消息的一方
+     * 开启Server线程，等待接收消息
      */
     class MyServer extends Thread {
         @Override
@@ -97,9 +95,11 @@ public class ChatService extends Service {
 
             while (!myServer.isInterrupted()) {
                 try {
-                    multicastSocket.receive(dp);// 监听，接收消息
+                    // 监听，接收消息
+                    multicastSocket.receive(dp);
                     String tmp = new String(dp.getData(), 0, dp.getLength(), "UTF-8");
-                    dealMsg(tmp, dp.getAddress().getHostAddress());// 解析获取到得消息
+                    // 处理接收到的消息
+                    dealMsg(tmp, dp.getAddress().getHostAddress());
                     dp.setLength(data.length);
                 } catch (IOException e1) {
                     e1.printStackTrace();
@@ -114,22 +114,29 @@ public class ChatService extends Service {
          */
         private void dealMsg(String tmp, String hostAddress) throws JSONException {
             UdpMessage msg = new UdpMessage(new JSONObject(tmp));
-            int type = msg.getType();// 根据类型对信息进行操作
+            // 根据类型对信息进行操作
+            int type = msg.getType();
             switch (type) {
                 case ON_LINE:
+                    // 添加新用户
                     User user = new User();
                     user.setName(msg.getSenderName());
                     user.setIp(hostAddress);
                     user.setDeviceCode(msg.getDeviceCode());
+                    user.setApIpLastNum(msg.getApIpLastNum());
                     Log.e("ReceiveOnLine", user.getIp());
 
-                    boolean flag = true;//不添加已经存在的用户
+                    boolean flag = true; // 不添加已经存在的用户
                     for(User userTmp:users) {
                         Log.e("UserIP", userTmp.getIp() + " - " + hostAddress);
                         if (userTmp.getIp().equals(hostAddress)) {
                             flag = false;
-                            break;
+                            // 如果User所连接的AP地址有更新，则更新User信息
+                            if (userTmp.getApIpLastNum() != msg.getApIpLastNum()) {
+                                userTmp.setApIpLastNum(msg.getApIpLastNum());
+                            }
                         }
+                        break;
                     }
 
                     // 如果发送消息的源头不是自己且为新用户，则把它添加到好友列表，并且发送一条REPLY的消息
@@ -141,14 +148,20 @@ public class ChatService extends Service {
                     break;
 
                 case REPLY_ONLINE:
+                    // 添加新用户
                     user = new User();
                     user.setName(msg.getSenderName());
                     user.setIp(hostAddress);
                     user.setDeviceCode(msg.getDeviceCode());
+                    user.setApIpLastNum(msg.getApIpLastNum());
                     flag = true;//不添加已经存在的用户
                     for(User userTmp:users){
                         if(userTmp.getIp().equals(hostAddress)){
                             flag = false;
+                            // 如果User所连接的AP地址有更新，则更新User信息
+                            if (userTmp.getApIpLastNum() != msg.getApIpLastNum()) {
+                                userTmp.setApIpLastNum(msg.getApIpLastNum());
+                            }
                             break;
                         }
                     }
@@ -204,7 +217,8 @@ public class ChatService extends Service {
                     itc.start();
 
             }
-            onReceiver(type);// 发送一条广播，通知主页面刷新好友列表
+            // 收到任何消息，都会发送一条广播，通知刷新好友列表或聊天列表
+            onReceiver(type);
         }
     }
 
@@ -214,14 +228,14 @@ public class ChatService extends Service {
             // ON_LINE和REPLY_ONLINE为同一处理方式
             case ON_LINE:
             case REPLY_ONLINE:
-                // Log.i("广播", "刷新聊天界面啦");
+//                Log.i("广播", "刷新MainActivity列表界面啦");
                 sendBroadcast(new Intent(MainActivity.ACTION_REFRESH));
                 break;
             // 下面三种type为同一处理方式
             case TEXT_MESSAGE:
             case RECEIVE_MEDIA:
             case RECEIVE_IMAGE:
-                // Log.i("广播", "刷新聊天界面啦");
+                // Log.i("广播", "刷新ChatActivity聊天界面啦");
                 sendBroadcast(new Intent(ChatActivity.ACTION_NOTIFY_DATA));
                 break;
         }

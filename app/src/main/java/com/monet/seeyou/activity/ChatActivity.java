@@ -54,7 +54,7 @@ import java.util.Queue;
 public class ChatActivity extends Activity implements OnClickListener {
     public static final String ACTION_HEARTBEAT = "com.monet.seeyou.heartbeat";
     public static final String ACTION_NOTIFY_DATA = "com.monet.seeyou.notifydata";
-    private TextView chatterNameView,recordHintView;
+    private TextView chatterNameView, chatterApView, recordHintView;
     private ListView listView;
     private Button sendBtn, mediaBtn;
     private Button imageBtn;
@@ -69,6 +69,7 @@ public class ChatActivity extends Activity implements OnClickListener {
     private List<UdpMessage> myMessages = new ArrayList<UdpMessage>();
     private User chatter = new User();
     private String ChatterIp, ChatterDeviceCode, ChatterName;
+    private int ChatterApIpLastNum;
 
     private Media media = new Media();  //音频类，进行录音操作
     private String mediaName = null;
@@ -88,10 +89,12 @@ public class ChatActivity extends Activity implements OnClickListener {
         // 初始化聊天对方
         ChatterIp = getIntent().getStringExtra("IP");
         ChatterDeviceCode = getIntent().getStringExtra("DeviceCode");
-        ChatterName = getIntent().getStringExtra("name");
+        ChatterName = getIntent().getStringExtra("Name");
+        ChatterApIpLastNum = getIntent().getIntExtra("ApIpLastNum", 0);
         chatter.setIp(ChatterIp);
         chatter.setDeviceCode(ChatterDeviceCode);
         chatter.setName(ChatterName);
+        chatter.setApIpLastNum(ChatterApIpLastNum);;
 
         initView();// 初始化部件
         initService();// 初始化service
@@ -105,6 +108,8 @@ public class ChatActivity extends Activity implements OnClickListener {
     private void initView() {
         chatterNameView = (TextView) findViewById(R.id.chatter_name);
         chatterNameView.setText(ChatterName);
+        chatterApView = (TextView) findViewById(R.id.chatter_ap);
+        chatterApView.setText("@AP" + ChatterApIpLastNum);
         listView = (ListView) findViewById(R.id.chat_listview);
         sendBtn = (Button) findViewById(R.id.send_btn);
         mediaBtn = (Button) findViewById(R.id.send_record_btn);
@@ -476,7 +481,7 @@ public class ChatActivity extends Activity implements OnClickListener {
                         break;
                     case owner_media:
                         convertView = getLayoutInflater().inflate(
-                                R.layout.chat_my_media_listview,null);
+                                R.layout.chat_my_media_listview, null);
                         viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
                         viewHolder.media = (Button) convertView.findViewById(R.id.chat_my_media_button);
                         viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_my_name);
