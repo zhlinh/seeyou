@@ -7,6 +7,8 @@
     <string name="setting">设置</string>
     <string name="list">好友列表</string>
     <string name="location">位置服务</string>
-    <string name="ap">\@AP0</string>
+    <string name="ap">\@AP-00:00:00:00:00:00</string>
+    <string name="rssi">-1m</string>
     <string name="loading">loading...</string>
+    <string name="chatter">chatter</string>
 </resources>

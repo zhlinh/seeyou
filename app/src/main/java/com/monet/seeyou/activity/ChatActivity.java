@@ -68,8 +68,11 @@ public class ChatActivity extends Activity implements OnClickListener {
 
     private List<UdpMessage> myMessages = new ArrayList<UdpMessage>();
     private User chatter = new User();
+    // Chatter的ID识别信息
     private String ChatterIp, ChatterDeviceCode, ChatterName;
-    private int ChatterApIpLastNum;
+    // Chatter所连接的AP的信息
+    private String ChatterApDesc;
+    private int ChatterApRssi;
 
     private Media media = new Media();  //音频类，进行录音操作
     private String mediaName = null;
@@ -90,11 +93,13 @@ public class ChatActivity extends Activity implements OnClickListener {
         ChatterIp = getIntent().getStringExtra("IP");
         ChatterDeviceCode = getIntent().getStringExtra("DeviceCode");
         ChatterName = getIntent().getStringExtra("Name");
-        ChatterApIpLastNum = getIntent().getIntExtra("ApIpLastNum", 0);
+        ChatterApDesc = getIntent().getStringExtra("ApIpDesc");
+        ChatterApRssi = getIntent().getIntExtra("ApRssi", -1);
         chatter.setIp(ChatterIp);
         chatter.setDeviceCode(ChatterDeviceCode);
         chatter.setName(ChatterName);
-        chatter.setApIpLastNum(ChatterApIpLastNum);;
+        chatter.setApDesc(ChatterApDesc);
+        chatter.setApRssi(ChatterApRssi);
 
         initView();// 初始化部件
         initService();// 初始化service
@@ -108,8 +113,6 @@ public class ChatActivity extends Activity implements OnClickListener {
     private void initView() {
         chatterNameView = (TextView) findViewById(R.id.chatter_name);
         chatterNameView.setText(ChatterName);
-        chatterApView = (TextView) findViewById(R.id.chatter_ap);
-        chatterApView.setText("@AP" + ChatterApIpLastNum);
         listView = (ListView) findViewById(R.id.chat_listview);
         sendBtn = (Button) findViewById(R.id.send_btn);
         mediaBtn = (Button) findViewById(R.id.send_record_btn);

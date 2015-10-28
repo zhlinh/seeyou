@@ -11,7 +11,8 @@ public class User implements Serializable {
 
     private String name;//用户姓名
     private String ip;//用户ip地址
-    private int apIpLastNum; //用户所连接的AP的ip地址的最后一位
+    private String apDesc; //用户所连接的AP的描述符，目前采用的是BSSID
+    private int apRssi; //用户的RSSI
     private String deviceCode;//用户的唯一标识码
     private String heartTime;//用户上一次心跳时间（用于判断用户仍然在线）,十秒跳一次10,000ms
     private boolean refreshIcon;//记录是否刷新头像（登录第一次会刷新头像）
@@ -34,11 +35,17 @@ public class User implements Serializable {
     public void setIp(String ip) {
         this.ip = ip;
     }
-    public int getApIpLastNum() {
-        return apIpLastNum;
+    public String getApDesc() {
+        return apDesc;
     }
-    public void setApIpLastNum(int apIpLastNum) {
-        this.apIpLastNum = apIpLastNum;
+    public void setApDesc(String apDesc) {
+        this.apDesc = apDesc;
+    }
+    public int getApRssi() {
+        return apRssi;
+    }
+    public void setApRssi(int apRssi) {
+        this.apRssi = apRssi;
     }
     public String getDeviceCode() {
         return deviceCode;
@@ -46,11 +53,9 @@ public class User implements Serializable {
     public void setDeviceCode(String deviceCode) {
         this.deviceCode = deviceCode;
     }
-
     public String getHeartTime() {
         return heartTime;
     }
-
     public void setHeartTime(String heartTime) {
         this.heartTime = heartTime;
     }

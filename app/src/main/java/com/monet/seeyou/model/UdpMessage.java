@@ -16,7 +16,8 @@ public class UdpMessage {
     private String msg; //信息内容
     private String sendTime; //发送时间
     private String deviceCode; //手机唯一标识码
-    private int apIpLastNum; //发送者所连接的AP的IP地址的最后一位
+    private String apDesc; //发送者所连接的AP描述符，目前采用的是BSSID
+    private int apRssi; //发送者接收到所连接AP的信号强度RSSI
     private int type; //消息的类型
     private boolean own; //判断这条消息是否是自己发送的
 
@@ -42,7 +43,8 @@ public class UdpMessage {
         msg = new String(Base64.decode(object.getString("msg").getBytes(),Base64.DEFAULT));
         setSendTime(object.getString("sendTime"));
         setDeviceCode(object.getString("deviceCode"));
-        setApIpLastNum(object.getInt("apIpLastNum"));
+        setApDesc(object.getString("apDesc"));
+        setApRssi(object.getInt("apRssi"));
         type = object.getInt("type");
         object = null;//销毁
     }
@@ -59,7 +61,8 @@ public class UdpMessage {
             object.put("destIp", destIp);
             object.put("msg", Base64.encodeToString(msg.getBytes(),Base64.DEFAULT));
             object.put("deviceCode", getDeviceCode());
-            object.put("apIpLastNum", getApIpLastNum());
+            object.put("apDesc", getApDesc());
+            object.put("apRssi", getApRssi());
             object.put("type", type);
             object.put("sendTime", sendTime);
             return object.toString();
@@ -112,10 +115,16 @@ public class UdpMessage {
     public void setDeviceCode(String deviceCode) {
         this.deviceCode = deviceCode;
     }
-    public int getApIpLastNum() {
-        return apIpLastNum;
+    public String getApDesc() {
+        return apDesc;
     }
-    public void setApIpLastNum(int apIpLastNum) {
-        this.apIpLastNum = apIpLastNum;
+    public void setApDesc(String apDesc) {
+        this.apDesc= apDesc;
+    }
+    public int getApRssi() {
+        return apRssi;
+    }
+    public void setApRssi(int apRssi) {
+        this.apRssi = apRssi;
     }
 }

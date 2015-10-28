@@ -20,17 +20,8 @@
             android:layout_centerVertical="true"
             android:layout_marginLeft="10dp"
             android:textColor="#fff"
-            android:textSize="23sp" />
-
-        <TextView
-            android:id="@+id/chatter_ap"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_centerVertical="true"
-            android:layout_marginRight="10dp"
-            android:textColor="#fff"
-            android:textSize="20sp" />
+            android:textSize="23sp"
+            android:text="@string/chatter"/>
 
     </RelativeLayout>
 

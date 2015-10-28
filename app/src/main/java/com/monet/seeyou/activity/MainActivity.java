@@ -10,6 +10,7 @@ import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -89,6 +90,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * 用于定时刷新列表
+     */
+    private final Handler handler = new Handler();
+    private final Runnable task = new Runnable() {
+        @Override
+        public void run() {
+            // 定时更新，单位为毫秒
+            handler.postDelayed(this, 1000);
+            // 更新自己的AP信息及RSSI信息
+            Log.e(TAG,"auto update UI when necessary.");
+            boolean updateFlag = false;
+            String tmpApDesc = MyApplication.appInstance.getApDesc();
+            if ( tmpApDesc != null && !myself.getApDesc().equals(tmpApDesc)) {
+                myself.setApDesc(tmpApDesc);
+                updateFlag = true;
+            }
+            if (myself.getApRssi() != MyApplication.appInstance.getApRssi()) {
+                myself.setApRssi(MyApplication.appInstance.getApRssi());
+                updateFlag = true;
+            }
+            // 广播自己上线的消息，以便自己及其他用户更新列表
+            if (binder != null && updateFlag) {
+                binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
+            }
+            // 更新列表，发送上线消息，接收到后便会自动更新列表，故此处不需要重复
+            //sendBroadcast(new Intent(MainActivity.ACTION_REFRESH));
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,14 +129,20 @@ public class MainActivity extends Activity {
         myself.setName(MyApplication.appInstance.getMyName());
         myself.setIp(MyApplication.appInstance.getLocalIp());
         myself.setDeviceCode(MyApplication.appInstance.getDeviceCode());
-        myself.setApIpLastNum(MyApplication.appInstance.getApIpLastNum());
-        Log.e("Ip", myself.getIp());
+        myself.setApDesc(MyApplication.appInstance.getApDesc());
+        myself.setApRssi(MyApplication.appInstance.getApRssi());
+        // 注意未连接Wifi时可能出现的空指针问题
+        if (myself.getIp() == null) {
+            Log.e("Ip", "null");
+        } else {
+            Log.e("Ip", myself.getIp());
+        }
 
         initService();// 初始化Service
         initTopBar(); //初始化顶部菜单栏
         initUserList();// 初始化用户列表
         initReceiver();//注册广播接收器，用于刷新用户列表的广播接收器
-
+        handler.post(task);  //每隔1s定时刷新用户列表
     }
 
     /**
@@ -170,7 +206,8 @@ public class MainActivity extends Activity {
                 intent.putExtra("IP", chatter.getIp());
                 intent.putExtra("DeviceCode", chatter.getDeviceCode());
                 intent.putExtra("Name", chatter.getName());
-                intent.putExtra("ApIpLastNum", chatter.getApIpLastNum());
+                intent.putExtra("ApDesc", chatter.getApDesc());
+                intent.putExtra("ApRssi", chatter.getApRssi());
                 startActivity(intent);
             }
         });
@@ -231,7 +268,8 @@ public class MainActivity extends Activity {
                         .findViewById(R.id.user_list_name);
                 viewHolder.userIp = (TextView) view
                         .findViewById(R.id.user_list_ip);
-                viewHolder.userApIpLastNum = (TextView) view.findViewById(R.id.user_list_ap_ip);
+                viewHolder.userApDesc= (TextView) view.findViewById(R.id.user_list_ap_desc);
+                viewHolder.userApRssi = (TextView) view.findViewById(R.id.user_list_ap_rssi);
                 view.setTag(viewHolder);
             } else {
                 view = convertView;
@@ -241,10 +279,11 @@ public class MainActivity extends Activity {
             // 设置用户列表中的item的显示
             viewHolder.userName.setText(tmp.getName());
             viewHolder.userIp.setText(tmp.getIp());
-            viewHolder.userApIpLastNum.setText("@AP" + tmp.getApIpLastNum());
+            viewHolder.userApDesc.setText("@AP-" + tmp.getApDesc());
+            viewHolder.userApRssi.setText(Util.rssi2Distance(tmp.getApRssi()));
             // 设置用户头像
             if(position == 0){
-                //自己
+                //自己的头像
                 Bitmap bitmap = MemoryCache.getInstance().get("me");
                 if(bitmap == null){
                     // 缓存中没有图片，则需要从文件中读出
@@ -259,7 +298,7 @@ public class MainActivity extends Activity {
                     viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
                 }
             }else{
-                // 其他用户
+                // 其他用户的头像
                 Bitmap bitmap1 = MemoryCache.getInstance().get(tmp.getDeviceCode());//根据用户的设备码在缓存中寻找对应的头像
                 if(bitmap1 == null){
                     //内存中没有,则在文件中查找
@@ -271,12 +310,12 @@ public class MainActivity extends Activity {
                             refreshIcon(tmp, viewHolder.userIcon);
                         }
                     }else{
-                        //文件中也没有
+                        //文件中也没有头像图片
                         viewHolder.userIcon.setImageResource(R.drawable.ic_launcher);
                         refreshIcon(tmp, viewHolder.userIcon);
                     }
-                }else{
-                    //若缓存中有图片
+                }else {
+                    //若缓存中有头像图片
                     viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
                 }
             }
@@ -286,7 +325,8 @@ public class MainActivity extends Activity {
         class ViewHolder {
             TextView userName;
             TextView userIp;
-            TextView userApIpLastNum;
+            TextView userApDesc;
+            TextView userApRssi;
             ImageView userIcon;
         }
     }
@@ -330,7 +370,7 @@ public class MainActivity extends Activity {
                     listView.setAdapter(adapter);
                 }
                 adapter.notifyDataSetChanged();
-            }else{
+            } else{
                 unbindService(myServiceConnection);
                 binded = false;
                 bindService(new Intent(MainActivity.this, ChatService.class),
@@ -363,15 +403,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onRestart() {
         super.onRestart();
-        //修改完设置后，刷新自己
+        //修改完设置后，刷新自己的名字
         myself.setName(MyApplication.appInstance.getMyName());
-        // 同时刷新IP
+        // 同时刷新IP，AP的IP以及RSSI等信息
         myself.setIp(MyApplication.appInstance.getLocalIp());
-        myself.setApIpLastNum(MyApplication.appInstance.getApIpLastNum());
-        // 和sendBroadcast(new Intent(MainActivity.ACTION_REFRESH))的作用是一样的，刷新列表
-        adapter = new UserAdapter(MainActivity.this, R.layout.item_list, users);
-        listView.setAdapter(adapter);
-        adapter.notifyDataSetChanged();
+        myself.setApDesc(MyApplication.appInstance.getApDesc());
+        myself.setApRssi(MyApplication.appInstance.getApRssi());
+        // Restart后广播自己上线的消息，以便自己及其他用户更新列表
+        if (binder != null) {
+            binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
+        }
+        // sendBroadcast(new Intent(MainActivity.ACTION_REFRESH)) // 刷新列表
     }
 
     @Override

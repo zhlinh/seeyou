@@ -24,6 +24,17 @@ import java.util.Calendar;
  *
  */
 public class Util {
+    // RSSI的粗略评定标准
+    private static final int RARE = -80;
+    private static final int MEDIUM_RARE = -60;
+    private static final int MEDIUM_WELL = -40;
+    private static final int WELL_DONE = -20;
+    // 与RSSI相对应的距离
+    private static final String DIST_1 = " 0- 5m";
+    private static final String DIST_2 = " 5-10m";
+    private static final String DIST_3 = "10-15m";
+    private static final String DIST_4 = "15-20m";
+    private static final String DIST_5 = "20-25m";
     //生成圆角图片
     public static Bitmap getRoundedCornerBitmap(Bitmap bitmap) {
         try {
@@ -82,10 +93,10 @@ public class Util {
      * 获取Wifi环境下的一些参数
      */
     public static String getSSID(Context context) {
-        // 只获取wifi地址
-        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);//获取WifiManager
+        //获取WifiManager
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         //检查wifi是否开启
-        if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
+        if (wifiManager.isWifiEnabled()) {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             // wifiInfo.getSSID得到的SSID会带双引号
             return (wifiInfo == null) ? null : wifiInfo.getSSID().substring(1, wifiInfo.getSSID().length()-1);
@@ -93,22 +104,37 @@ public class Util {
         return null;
     }
 
-     public static int getRSSI(Context context) {
-        // 只获取wifi地址
-        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);//获取WifiManager
+    public static String getBSSID(Context context) {
+        //获取WifiManager
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         //检查wifi是否开启
-        if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
+        if (wifiManager.isWifiEnabled()) {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-            return  (wifiInfo == null) ? 0 : wifiInfo.getRssi();
+            // wifiInfo.getSSID得到的SSID会带双引号
+            return (wifiInfo == null) ? null : wifiInfo.getBSSID();
         }
-         return  0;
+        return null;
+    }
+
+     // 获取所连接的AP的接收信号强度，即RSSI
+     public static int getRSSI(Context context) {
+        //获取WifiManager
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        //检查wifi是否开启
+        if (wifiManager.isWifiEnabled()) {
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            return  (wifiInfo == null) ? -255 : wifiInfo.getRssi();
+        }
+        // 获取不了接收信号强度，则返回-255，因RSSI为负值
+        return  -255;
     }
 
      public static String getServerAddress(Context context) {
-        // 只获取wifi地址
-        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);//获取WifiManager
+        //获取WifiManager
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         //检查wifi是否开启
         if (wifiManager.isWifiEnabled()) { // 没开启wifi时,ip地址为0.0.0.0
+            // 获取的是DHCP服务器的IP地址
             DhcpInfo dhcpinfo = wifiManager.getDhcpInfo();
             return (dhcpinfo == null) ? null : Util.formatIpAddress(dhcpinfo.serverAddress);
         }
@@ -119,5 +145,20 @@ public class Util {
     public static String formatIpAddress(int ip) {
         return (ip & 0xFF)+ "." + ((ip >> 8 ) & 0xFF) + "." + ((ip >> 16 ) & 0xFF)
                     +"."+((ip >> 24 ) & 0xFF);
+    }
+
+    // 将RSSI转换为粗略估计的距离
+    public static String rssi2Distance(int rssi) {
+        if (rssi < RARE) {
+            return DIST_5;
+        } else if (RARE <= rssi && rssi< MEDIUM_RARE) {
+            return DIST_4;
+        } else if (MEDIUM_RARE <= rssi && rssi< MEDIUM_WELL) {
+            return DIST_3;
+        } else if (MEDIUM_WELL <= rssi && rssi< WELL_DONE) {
+            return DIST_2;
+        } else {
+            return DIST_1;
+        }
     }
 }
