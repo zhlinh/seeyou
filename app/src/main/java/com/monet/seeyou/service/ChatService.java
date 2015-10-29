@@ -128,21 +128,24 @@ public class ChatService extends Service {
                     user.setApRssi(msg.getApRssi());
                     Log.e("ReceiveOnLine", user.getIp());
 
-                    addUserFlag = true;
-                    for(User userTmp:users) {
-                        Log.e("UserIP", userTmp.getIp() + " - " + hostAddress);
-                        if (userTmp.getIp().equals(hostAddress)) {
-                            addUserFlag = false; // 不添加已存在的用户
-                            // 如果User所连接的AP地址有更新，则更新User信息
-                            // 注意String需要用equals来比较
-                            if (!userTmp.getApDesc().equals(msg.getApDesc())) {
-                                userTmp.setApDesc(msg.getApDesc());
+                    addUserFlag = false;
+                    if (user.getIp() != null) {
+                        addUserFlag = true;
+                        for (User userTmp : users) {
+                            Log.e("UserIP", userTmp.getIp() + " - " + hostAddress);
+                            if (userTmp.getIp().equals(hostAddress)) {
+                                addUserFlag = false; // 不添加已存在的用户
+                                // 如果User所连接的AP地址有更新，则更新User信息
+                                // 注意String需要用equals来比较
+                                if (!userTmp.getApDesc().equals(msg.getApDesc())) {
+                                    userTmp.setApDesc(msg.getApDesc());
+                                }
+                                // 如果User所连接的AP的RSSI有更新，则更新User信息
+                                if (userTmp.getApRssi() != msg.getApRssi()) {
+                                    userTmp.setApRssi(msg.getApRssi());
+                                }
+                                break;
                             }
-                            // 如果User所连接的AP的RSSI有更新，则更新User信息
-                            if (userTmp.getApRssi() != msg.getApRssi()) {
-                                userTmp.setApRssi(msg.getApRssi());
-                            }
-                            break;
                         }
                     }
 
@@ -162,20 +165,23 @@ public class ChatService extends Service {
                     user.setDeviceCode(msg.getDeviceCode());
                     user.setApDesc(msg.getApDesc());
                     user.setApRssi(msg.getApRssi());
-                    addUserFlag = true;
-                    for(User userTmp:users){
-                        if(userTmp.getIp().equals(hostAddress)){
-                            addUserFlag = false; //不添加已存在的用户
-                            // 如果User所连接的AP地址有更新，则更新User信息
-                            // 注意String需要用equals来比较
-                            if (!userTmp.getApDesc().equals(msg.getApDesc())) {
-                                userTmp.setApDesc(msg.getApDesc());
+                    addUserFlag = false;
+                    if (user.getIp() != null) {
+                        addUserFlag = true;
+                        for (User userTmp : users) {
+                            if (userTmp.getIp().equals(hostAddress)) {
+                                addUserFlag = false; //不添加已存在的用户
+                                // 如果User所连接的AP地址有更新，则更新User信息
+                                // 注意String需要用equals来比较
+                                if (!userTmp.getApDesc().equals(msg.getApDesc())) {
+                                    userTmp.setApDesc(msg.getApDesc());
+                                }
+                                // 如果User所连接的AP的RSSI有更新，则更新User信息
+                                if (userTmp.getApRssi() != msg.getApRssi()) {
+                                    userTmp.setApRssi(msg.getApRssi());
+                                }
+                                break;
                             }
-                             // 如果User所连接的AP的RSSI有更新，则更新User信息
-                            if (userTmp.getApRssi() != msg.getApRssi()) {
-                                userTmp.setApRssi(msg.getApRssi());
-                            }
-                            break;
                         }
                     }
                     if (!((MyApplication.appInstance.getLocalIp()).equals(hostAddress)) && addUserFlag) {

@@ -9,9 +9,12 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -61,6 +64,7 @@ public class MainActivity extends Activity {
 
     MyServiceConnection myServiceConnection;
     RefreshReceiver refreshReceiver = new RefreshReceiver();
+    WifiReceiver wifiReceiver = new WifiReceiver();
     // Adapter
     private UserAdapter adapter;
     private ListView listView;
@@ -91,7 +95,7 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 用于定时刷新列表
+     * 用于定时刷新列表，弃用，改为接收广播的方式
      */
     private final Handler handler = new Handler();
     private final Runnable task = new Runnable() {
@@ -103,11 +107,14 @@ public class MainActivity extends Activity {
             Log.e(TAG,"auto update UI when necessary.");
             boolean updateFlag = false;
             String tmpApDesc = MyApplication.appInstance.getApDesc();
-            if ( tmpApDesc != null && !myself.getApDesc().equals(tmpApDesc)) {
-                myself.setApDesc(tmpApDesc);
-                updateFlag = true;
+            if (tmpApDesc != null && myself.getApDesc()!= null) {
+                if (!myself.getApDesc().equals(tmpApDesc)) {
+                    myself.setApDesc(tmpApDesc);
+                    updateFlag = true;
+                }
             }
-            if (myself.getApRssi() != MyApplication.appInstance.getApRssi()) {
+            if (!Util.rssi2Distance(myself.getApRssi()).equals
+                    (Util.rssi2Distance(MyApplication.appInstance.getApRssi()))) {
                 myself.setApRssi(MyApplication.appInstance.getApRssi());
                 updateFlag = true;
             }
@@ -142,7 +149,7 @@ public class MainActivity extends Activity {
         initTopBar(); //初始化顶部菜单栏
         initUserList();// 初始化用户列表
         initReceiver();//注册广播接收器，用于刷新用户列表的广播接收器
-        handler.post(task);  //每隔1s定时刷新用户列表
+//      handler.post(task);  //每隔1s定时刷新用户列表
     }
 
     /**
@@ -347,8 +354,12 @@ public class MainActivity extends Activity {
     }
 
     private void initReceiver(){
-        IntentFilter filter = new IntentFilter(ACTION_REFRESH);
-        registerReceiver(refreshReceiver, filter);
+        IntentFilter refreshFilter = new IntentFilter(ACTION_REFRESH);
+        registerReceiver(refreshReceiver, refreshFilter);
+        IntentFilter wifiFilter = new IntentFilter();
+        wifiFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        wifiFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        registerReceiver(wifiReceiver, wifiFilter);
     }
 
     /**
@@ -360,7 +371,9 @@ public class MainActivity extends Activity {
             if(binder != null){
                 users.clear();
                 // 添加自己，方便测试
-                users.add(myself);
+                if (myself.getIp() != null) {
+                    users.add(myself);
+                }
                 List<User> list = binder.getUsers();
                 for (int i = 0; i < list.size(); i++){
                     users.add(list.get(i));
@@ -377,6 +390,53 @@ public class MainActivity extends Activity {
                         myServiceConnection = new MyServiceConnection(), Context.BIND_AUTO_CREATE);
             }
         }
+    }
+
+    /**
+     * 广播接收器，监听WiFi信息的变化，以便更新用户列表的信息
+     */
+    public class WifiReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // 监测连接到有效的wifi
+            if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())) {
+                Parcelable parcelableExtra = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                if (parcelableExtra != null) {
+                    NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
+                    // 连接上wifi时
+                    if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
+                        Log.e(TAG, "new Wifi connected.");
+                        // 更新自己的信息
+                        myself.setName(MyApplication.appInstance.getMyName());
+                        // 同时刷新IP，AP的IP以及RSSI等信息
+                        myself.setIp(MyApplication.appInstance.getLocalIp());
+                        myself.setApDesc(MyApplication.appInstance.getApDesc());
+                        myself.setApRssi(MyApplication.appInstance.getApRssi());
+                        // 广播自己上线的消息，以便自己及其他用户更新列表
+                        if (binder != null) {
+                            binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
+                        }
+                    }
+                }
+            }
+            // 监测AP的RSSI发生变化
+            if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction())) {
+                boolean updateFlag = false;
+                Log.e(TAG, "Rssi changed.");
+                if (!Util.rssi2Distance(myself.getApRssi()).equals
+                        (Util.rssi2Distance(MyApplication.appInstance.getApRssi()))){
+                    // 转换成的Distance不相同才更新
+                    myself.setApRssi(MyApplication.appInstance.getApRssi());
+                    Log.e(TAG, "Rssi:" + myself.getApRssi());
+                    updateFlag = true;
+                }
+                // 广播自己上线的消息，以便自己及其他用户更新列表
+                if (binder != null && updateFlag) {
+                    binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
+
+                }
+            } // RSSI_CHANGE_ACTION
+        } // onReceive()
     }
 
     //按两次Back键退出程序
@@ -420,6 +480,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(refreshReceiver);
+        unregisterReceiver(wifiReceiver);
         if(binded){
             unbindService(myServiceConnection);
             binded = false;
