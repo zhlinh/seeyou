@@ -2,7 +2,6 @@ package com.monet.seeyou.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Window;
 import android.widget.TextView;
 
@@ -28,7 +27,7 @@ public class LocateActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.activity_location);
+        setContentView(R.layout.activity_locate);
         locationInfo = (TextView) findViewById(R.id.location_info);
         mLocationClient = new LocationClient(this.getApplicationContext());
         myListener = new MyLocationListener();
@@ -120,7 +119,7 @@ public class LocateActivity extends Activity {
                     sb.append(p.getId() + " " + p.getName() + " " + p.getRank());
                 }
             }
-            Log.i("BaiduLocationApiDem", sb.toString());
+            // Log.d("BaiduLocationApiDem", sb.toString());
             locationInfo.setText(sb.toString());
         }
     }

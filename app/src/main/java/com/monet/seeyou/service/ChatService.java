@@ -126,13 +126,13 @@ public class ChatService extends Service {
                     user.setDeviceCode(msg.getDeviceCode());
                     user.setApDesc(msg.getApDesc());
                     user.setApRssi(msg.getApRssi());
-                    Log.e("ReceiveOnLine", user.getIp());
+                    Log.d("ReceiveOnLine", user.getIp());
 
                     addUserFlag = false;
                     if (user.getIp() != null) {
                         addUserFlag = true;
                         for (User userTmp : users) {
-                            Log.e("UserIP", userTmp.getIp() + " - " + hostAddress);
+                            Log.d("UserIP", userTmp.getIp() + " - " + hostAddress);
                             if (userTmp.getIp().equals(hostAddress)) {
                                 addUserFlag = false; // 不添加已存在的用户
                                 // 如果User所连接的AP地址有更新，则更新User信息
@@ -266,7 +266,7 @@ public class ChatService extends Service {
     public void onLine() {
         send(MyApplication.appInstance.generateMyMessage("", ON_LINE)
                 .toJOString(), "255.255.255.255");
-        Log.i("发送者", "我上线啦！");
+        Log.d("发送者", "我上线啦！");
     }
 
     /**
@@ -298,7 +298,7 @@ public class ChatService extends Service {
         super.onDestroy();
         multicastSocket.close();
         myServer.interrupt();
-        Log.i("Service", "我被销毁啦！");
+        Log.d("Service", "我被销毁啦！");
     }
 
     public Map<String, Queue<UdpMessage>> getMsgs() {
@@ -316,7 +316,7 @@ public class ChatService extends Service {
 
         public void sendMsg(UdpMessage msg, String destIp) {
             send(msg.toJOString(), destIp);
-            Log.i("发送者", "点击按钮发送成功");
+            Log.d("发送者", "点击按钮发送成功");
         }
     }
 }

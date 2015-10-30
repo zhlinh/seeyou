@@ -351,14 +351,14 @@ public class ChatActivity extends Activity implements OnClickListener {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.i("接收器", "接收到刷新页面的广播，现在进行刷新。。。");
+            Log.d("接收器", "接收到刷新页面的广播，现在进行刷新。。。");
             if((intent.getAction()).equals(ACTION_NOTIFY_DATA)){
 
                 if(adapter != null){
                     if(binder != null){
                         Queue<UdpMessage> queue = binder.getMessages().get(chatter.getIp());
                         if(queue != null){
-                            Log.i("消息队列", "消息队列不为空，遍历");
+                            Log.d("消息队列", "消息队列不为空，遍历");
                             ergodicMessage(queue);
                         }
                     }else{

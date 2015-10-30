@@ -35,7 +35,7 @@ import java.io.IOException;
  */
 public class SetActivity extends Activity implements OnClickListener {
     private ImageView icon;
-    private Button iconButton, nicknameButton;
+    private Button  nicknameButton;
     private EditText nicknameEdt;
 
     private final int CUT_PHOTO_REQUEST_CODE = 201;
@@ -51,7 +51,7 @@ public class SetActivity extends Activity implements OnClickListener {
         setContentView(R.layout.activity_set);
 
         iconPath = getFilesDir() + File.separator + iconName;// 给用户自己的头像的存储路径赋值
-        Log.i("filepath", iconPath);
+        Log.d("filepath", iconPath);
 
         initView();//绑定部件
 
@@ -59,8 +59,10 @@ public class SetActivity extends Activity implements OnClickListener {
         setIcon();
 
         // 设置昵称EditText中的内容，从me文档中获取个人姓名信息
-        nicknameEdt.setText(getSharedPreferences("me", MODE_PRIVATE).getString(
-                "name", "无名"));
+        String tmpNickname = getSharedPreferences("me", MODE_PRIVATE).getString("name", "无名");
+        nicknameEdt.setText(tmpNickname);
+        // 设置光标的位置
+        nicknameEdt.setSelection(tmpNickname.length());
 
         // 监听button事件
         icon.setOnClickListener(this);// 选择图片按钮
@@ -79,7 +81,7 @@ public class SetActivity extends Activity implements OnClickListener {
         Bitmap bitmap = MemoryCache.getInstance().get(iconName);
         // 判断是否在缓存中
         if (bitmap != null) {
-            Log.i("test", "图片在缓存中");
+            Log.d("test-image", "图片在缓存中");
             icon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
         } else {
             bitmap = BitmapFactory.decodeFile(iconPath);// 则打开文件路径看看是否保存在文件当中
@@ -87,7 +89,7 @@ public class SetActivity extends Activity implements OnClickListener {
                 // 文件路径中也没有，则设一个默认图
                 icon.setImageResource(R.drawable.ic_launcher);
             } else {
-                Log.i("test", "图片在文件路径中");
+                Log.d("test-image", "图片在文件路径中");
                 // 文件路径中存在，则
                 icon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
                 MemoryCache.getInstance().put(iconName, bitmap);

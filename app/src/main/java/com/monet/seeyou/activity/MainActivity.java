@@ -104,7 +104,7 @@ public class MainActivity extends Activity {
             // 定时更新，单位为毫秒
             handler.postDelayed(this, 1000);
             // 更新自己的AP信息及RSSI信息
-            Log.e(TAG,"auto update UI when necessary.");
+            Log.d(TAG,"auto update UI when necessary.");
             boolean updateFlag = false;
             String tmpApDesc = MyApplication.appInstance.getApDesc();
             if (tmpApDesc != null && myself.getApDesc()!= null) {
@@ -140,9 +140,9 @@ public class MainActivity extends Activity {
         myself.setApRssi(MyApplication.appInstance.getApRssi());
         // 注意未连接Wifi时可能出现的空指针问题
         if (myself.getIp() == null) {
-            Log.e("Ip", "null");
+            Log.d("Ip", "null");
         } else {
-            Log.e("Ip", myself.getIp());
+            Log.d("Ip", myself.getIp());
         }
 
         initService();// 初始化Service
@@ -240,7 +240,7 @@ public class MainActivity extends Activity {
                         tmp.length(), InetAddress.getByName("255.255.255.255"), MESSAGE_PORT);
                 // 除了初始化之外，MulticastSocket 和 DatagramSocket 的使用方式几乎一样。而实际上前者就是后者的子类。
                 multicastSocket.send(dgp);
-                Log.i("发送者", "成功发送");
+                Log.d("发送者", "成功发送");
                 interrupt();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -405,7 +405,7 @@ public class MainActivity extends Activity {
                     NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
                     // 连接上wifi时
                     if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
-                        Log.e(TAG, "new Wifi connected.");
+                        Log.d(TAG, "new Wifi connected.");
                         // 更新自己的信息
                         myself.setName(MyApplication.appInstance.getMyName());
                         // 同时刷新IP，AP的IP以及RSSI等信息
@@ -422,12 +422,12 @@ public class MainActivity extends Activity {
             // 监测AP的RSSI发生变化
             if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction())) {
                 boolean updateFlag = false;
-                Log.e(TAG, "Rssi changed.");
+                Log.d(TAG, "Rssi changed.");
                 if (!Util.rssi2Distance(myself.getApRssi()).equals
                         (Util.rssi2Distance(MyApplication.appInstance.getApRssi()))){
                     // 转换成的Distance不相同才更新
                     myself.setApRssi(MyApplication.appInstance.getApRssi());
-                    Log.e(TAG, "Rssi:" + myself.getApRssi());
+                    Log.d(TAG, "Rssi:" + myself.getApRssi());
                     updateFlag = true;
                 }
                 // 广播自己上线的消息，以便自己及其他用户更新列表
@@ -486,7 +486,7 @@ public class MainActivity extends Activity {
             binded = false;
         }
         stopService(new Intent(MainActivity.this, ChatService.class));
-        Log.i(TAG, "Activity被销毁啊！");
+        Log.d(TAG, "Activity被销毁啊！");
     }
 
 }

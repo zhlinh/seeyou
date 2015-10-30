@@ -89,7 +89,7 @@ public class MyApplication extends Application {
         TelephonyManager telephonyManager=(TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         String tmpCode = null;
         tmpCode = telephonyManager.getDeviceId();
-        Log.d("=============", "DeviceId  :" + deviceCode);
+        Log.d("MyApplication", "DeviceId  :" + deviceCode);
         // 如果获取不了设备唯一识别码就用Mac地址代替
         if(tmpCode == null){
             WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
