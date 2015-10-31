@@ -1,6 +1,9 @@
 package com.monet.seeyou.util;
 
-import com.monet.seeyou.model.User;
+import android.graphics.Bitmap;
+
+import com.monet.seeyou.service.ChatService;
+import com.monet.seeyou.tool.MemoryCache;
 import com.monet.seeyou.tool.MyApplication;
 
 import java.io.BufferedInputStream;
@@ -17,10 +20,13 @@ import java.net.Socket;
  */
 
 public class IconTcpServer{
-    private User user;
+    public static final int ICON_TCP_PORT = 2223;
+    private String deviceCode = null;
+    ChatService service = null;
 
-    public IconTcpServer(User user){
-        this.user = user;
+    public IconTcpServer(String deviceCode, ChatService service){
+        this.deviceCode = deviceCode;
+        this.service = service;
     }
 
     public void start(){
@@ -40,11 +46,11 @@ public class IconTcpServer{
         }
 
         public void createServer() throws IOException, Exception{
-            ServerSocket ss =new ServerSocket(2223);
+            ServerSocket ss =new ServerSocket(ICON_TCP_PORT);
             Socket s = ss.accept();//开始监听
 
 
-            File file = new File(MyApplication.iconPath + user.getDeviceCode());//接收到的头像的存储路径
+            File file = new File(MyApplication.iconPath + deviceCode);//接收到的头像的存储路径
             if(file.exists()){//把之前的头像删除掉
                 file.delete();
             }
@@ -71,13 +77,13 @@ public class IconTcpServer{
             s.close();
             ss.close();
 
-
-            //把msg放入消息队列中
-            //调用ChatService的onreceive方法来广播，通知刷新列表
-
-            //MemoryCache.getInstance().put(user.getDeviceCode(), bitmap1);//放入缓存中
+            // 将接收到的Icon存到缓存中
+            Bitmap bitmap = MemoryCache.getInstance().get(deviceCode);
+            MemoryCache.getInstance().remove(deviceCode); //删除原来的缓存
+            MemoryCache.getInstance().put(deviceCode, bitmap);//放入缓存中
+            // 调用ChatService的onreceive方法来广播，通知刷新列表
+            service.onReceiver(ChatService.RECEIVE_ICON);
         }
     }
-
 
 }

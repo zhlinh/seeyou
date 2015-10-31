@@ -38,6 +38,7 @@ public class SetActivity extends Activity implements OnClickListener {
     private Button  nicknameButton;
     private EditText nicknameEdt;
 
+    private final String TAG = "SetAct";
     private final int CUT_PHOTO_REQUEST_CODE = 201;
     private final int SELECT_PHOTO_REQUEST_CODE = 200;
 
@@ -163,6 +164,10 @@ public class SetActivity extends Activity implements OnClickListener {
                 outputStream.close();
 
                 MemoryCache.getInstance().put(iconName, bitmap);// 加入到缓存中
+                Editor editor = getSharedPreferences("me", MODE_PRIVATE).edit();
+                // 标记为头像为刚更新的头像
+                editor.putBoolean("is_refresh_icon", true);
+                editor.apply();
                 Toast.makeText(getApplicationContext(), "成功修改头像",
                         Toast.LENGTH_LONG).show();
             } catch (IOException e) {

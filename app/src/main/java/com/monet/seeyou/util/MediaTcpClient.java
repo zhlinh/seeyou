@@ -11,10 +11,11 @@ import java.net.Socket;
 
 /**
  * Created by Monet on 2015/6/16.
- * Use TCP port 2222
+ * Use TCP port 2225, same as MediaTcpServer.
  */
 
 public class MediaTcpClient {
+    public static final int MEDIA_TCP_PORT = MediaTcpServer.MEDIA_TCP_PORT;
     UdpMessage msg = null;
     String destIp;//信息的来源
 
@@ -40,7 +41,7 @@ public class MediaTcpClient {
         }
 
         public void createClient() throws Exception{
-            Socket s = new Socket(destIp,2222);
+            Socket s = new Socket(destIp, MEDIA_TCP_PORT);
 
             File file = new File(new Media().getSendPath() + "/" + msg.getMsg());
 

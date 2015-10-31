@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 
 public class ImageTcpServer{
+    public static final int IMAGE_TCP_PORT = 2224;
     ChatService service = null;
     UdpMessage msg;
     String senderIp;//信息的来源
@@ -47,7 +48,7 @@ public class ImageTcpServer{
         }
 
         public void createServer() throws IOException, Exception{
-            ServerSocket ss =new ServerSocket(2224);
+            ServerSocket ss =new ServerSocket(IMAGE_TCP_PORT);
             Socket s = ss.accept();//开始监听
 
             String[] info = ((String)msg.getMsg()).split("/");

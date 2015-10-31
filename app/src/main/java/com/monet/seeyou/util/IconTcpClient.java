@@ -10,10 +10,11 @@ import java.net.Socket;
 
 /**
  * Created by Monet on 2015/6/16.
- * Use TCP port 2223
+ * Use TCP port 2223, same as IconTcpServer.
  */
 
 public class IconTcpClient {
+    public static final int ICON_TCP_PORT = IconTcpServer.ICON_TCP_PORT;
     private String destIp;
 
     public IconTcpClient(String destIp){
@@ -37,7 +38,7 @@ public class IconTcpClient {
         }
 
         public void createClient() throws Exception{
-            Socket s = new Socket(destIp,2223);
+            Socket s = new Socket(destIp, ICON_TCP_PORT);
 
             File file = new File(MyApplication.iconPath + "me");
 

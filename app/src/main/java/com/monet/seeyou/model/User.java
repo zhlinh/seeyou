@@ -15,12 +15,12 @@ public class User implements Serializable {
     private int apRssi; //用户的RSSI
     private String deviceCode;//用户的唯一标识码
     private String heartTime;//用户上一次心跳时间（用于判断用户仍然在线）,十秒跳一次10,000ms
-    private boolean refreshIcon;//记录是否刷新头像（登录第一次会刷新头像）
+    private boolean isRefreshIcon; // 是否是最近更新的头像
 
     //构造函数
     public User(){
         setHeartTime(System.currentTimeMillis()+"");
-        refreshIcon = false;
+        isRefreshIcon = false;
     }
 
     public String getName() {
@@ -47,6 +47,13 @@ public class User implements Serializable {
     public void setApRssi(int apRssi) {
         this.apRssi = apRssi;
     }
+    public boolean getIsRefreshIcon() {
+        return isRefreshIcon;
+    }
+    public void setIsRefreshIcon(boolean isRefreshIcon) {
+        this.isRefreshIcon = isRefreshIcon;
+    }
+
     public String getDeviceCode() {
         return deviceCode;
     }
@@ -58,12 +65,6 @@ public class User implements Serializable {
     }
     public void setHeartTime(String heartTime) {
         this.heartTime = heartTime;
-    }
-    public boolean isRefreshIcon() {
-        return refreshIcon;
-    }
-    public void setRefreshIcon(boolean refreshIcon) {
-        this.refreshIcon = refreshIcon;
     }
 
     /**

@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.NetworkInfo;
@@ -52,8 +53,8 @@ import java.util.List;
 
 public class MainActivity extends Activity {
     public static final String TAG = "MainAct";
-    public static final int MESSAGE_PORT = 2425;
-    public static final int ON_LINE = 101;
+    public static final int MESSAGE_PORT = ChatService.MESSAGE_PORT;
+    public static final int ON_LINE = ChatService.ON_LINE;
     public static final String ACTION_REFRESH= "com.monet.seeyou.refresh";
 /**
  * MuticastSocket 广播的方式，UDP，标识一组D类IP地址
@@ -95,7 +96,7 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 用于定时刷新列表，弃用，改为接收广播的方式
+     * 用于定时刷新列表
      */
     private final Handler handler = new Handler();
     private final Runnable task = new Runnable() {
@@ -104,15 +105,8 @@ public class MainActivity extends Activity {
             // 定时更新，单位为毫秒
             handler.postDelayed(this, 1000);
             // 更新自己的AP信息及RSSI信息
-            Log.d(TAG,"auto update UI when necessary.");
+            Log.d(TAG,"auto update RSSI UI when necessary.");
             boolean updateFlag = false;
-            String tmpApDesc = MyApplication.appInstance.getApDesc();
-            if (tmpApDesc != null && myself.getApDesc()!= null) {
-                if (!myself.getApDesc().equals(tmpApDesc)) {
-                    myself.setApDesc(tmpApDesc);
-                    updateFlag = true;
-                }
-            }
             if (!Util.rssi2Distance(myself.getApRssi()).equals
                     (Util.rssi2Distance(MyApplication.appInstance.getApRssi()))) {
                 myself.setApRssi(MyApplication.appInstance.getApRssi());
@@ -138,6 +132,8 @@ public class MainActivity extends Activity {
         myself.setDeviceCode(MyApplication.appInstance.getDeviceCode());
         myself.setApDesc(MyApplication.appInstance.getApDesc());
         myself.setApRssi(MyApplication.appInstance.getApRssi());
+        // 清除缓存的头像图片
+        MemoryCache.getInstance().removeAll();
         // 注意未连接Wifi时可能出现的空指针问题
         if (myself.getIp() == null) {
             Log.d("Ip", "null");
@@ -149,7 +145,7 @@ public class MainActivity extends Activity {
         initTopBar(); //初始化顶部菜单栏
         initUserList();// 初始化用户列表
         initReceiver();//注册广播接收器，用于刷新用户列表的广播接收器
-//      handler.post(task);  //每隔1s定时刷新用户列表
+        handler.post(task);  //每隔1s定时刷新用户列表
     }
 
     /**
@@ -304,26 +300,37 @@ public class MainActivity extends Activity {
                     // 若缓存中有图片
                     viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
                 }
-            }else{
+            } else {
                 // 其他用户的头像
-                Bitmap bitmap1 = MemoryCache.getInstance().get(tmp.getDeviceCode());//根据用户的设备码在缓存中寻找对应的头像
-                if(bitmap1 == null){
-                    //内存中没有,则在文件中查找
-                    bitmap1 = BitmapFactory.decodeFile(MyApplication.iconPath + tmp.getDeviceCode());
-                    if(bitmap1 != null){//文件中有
-                        viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
-                        MemoryCache.getInstance().put(tmp.getDeviceCode(), bitmap1);//放入缓存中
-                        if(!tmp.isRefreshIcon()){
-                            refreshIcon(tmp, viewHolder.userIcon);
+                //根据用户的设备码在缓存中寻找对应的头像
+                // 如果不是必须更新头像
+                if (!tmp.getIsRefreshIcon()) {
+                    Log.d(TAG, "locally getIcon: " + tmp.getIp());
+                    Bitmap bitmap1 = MemoryCache.getInstance().get(tmp.getDeviceCode());
+                    if (bitmap1 == null) {
+                        //内存中没有,则在文件中查找
+                        bitmap1 = BitmapFactory.decodeFile(MyApplication.iconPath + tmp.getDeviceCode());
+                        if (bitmap1 != null) { //文件中有
+                            viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
+                            MemoryCache.getInstance().put(tmp.getDeviceCode(), bitmap1);//放入缓存中
+                            Log.d(TAG, "getIcon from file: " + tmp.getIp());
+                            refreshIcon(tmp); // 开启头像接收的TCP服务器，并对方发送请求头像
+                        } else {
+                            //文件中也没有头像图片
+                            viewHolder.userIcon.setImageResource(R.drawable.ic_launcher);
+                            Log.d(TAG, "getIcon failed: " + tmp.getIp());
+                            refreshIcon(tmp); // 开启头像接收的TCP服务器，并对方发送请求头像
                         }
-                    }else{
-                        //文件中也没有头像图片
-                        viewHolder.userIcon.setImageResource(R.drawable.ic_launcher);
-                        refreshIcon(tmp, viewHolder.userIcon);
+                    } else {
+                        //若缓存中有头像图片
+                        Log.d(TAG, "getIcon from Cache: " + tmp.getIp());
+                        viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
                     }
-                }else {
-                    //若缓存中有头像图片
-                    viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
+                } else { // 如果该用户更新了头像
+                    Log.d(TAG, "should force updateIcon: " + tmp.getIp());
+                    MemoryCache.getInstance().remove(tmp.getDeviceCode()); //删除该用户缓存
+                    refreshIcon(tmp); // 开启头像接收的TCP服务器，并对方发送请求头像
+                    tmp.setIsRefreshIcon(false);
                 }
             }
             return view;
@@ -341,14 +348,14 @@ public class MainActivity extends Activity {
     /**
      * 刷新用户头像
      */
-    public void refreshIcon(User userTmp, View view){
+    public void refreshIcon(User userTmp){
         if(binder != null){
-            //打开一个接收头像的服务端
-            IconTcpServer ts = new IconTcpServer(userTmp);
+            //打开一个接收头像的服务端，接收一次便会关闭
+            IconTcpServer ts = new IconTcpServer(userTmp.getDeviceCode(), binder.getService());
             ts.start();
 
             //发送头像请求消息
-            UdpMessage message = MyApplication.appInstance.generateMyMessage("", ChatService.REQUIRE_ICON);
+            UdpMessage message = MyApplication.appInstance.generateMyMessage("", ChatService.REPLY_SEND_ICON);
             binder.sendMsg(message, userTmp.getIp());
         }
     }
@@ -358,7 +365,6 @@ public class MainActivity extends Activity {
         registerReceiver(refreshReceiver, refreshFilter);
         IntentFilter wifiFilter = new IntentFilter();
         wifiFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        wifiFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         registerReceiver(wifiReceiver, wifiFilter);
     }
 
@@ -383,7 +389,7 @@ public class MainActivity extends Activity {
                     listView.setAdapter(adapter);
                 }
                 adapter.notifyDataSetChanged();
-            } else{
+            } else {
                 unbindService(myServiceConnection);
                 binded = false;
                 bindService(new Intent(MainActivity.this, ChatService.class),
@@ -399,43 +405,22 @@ public class MainActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             // 监测连接到有效的wifi
-            if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())) {
-                Parcelable parcelableExtra = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-                if (parcelableExtra != null) {
-                    NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
-                    // 连接上wifi时
-                    if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
-                        Log.d(TAG, "new Wifi connected.");
-                        // 更新自己的信息
-                        myself.setName(MyApplication.appInstance.getMyName());
-                        // 同时刷新IP，AP的IP以及RSSI等信息
-                        myself.setIp(MyApplication.appInstance.getLocalIp());
-                        myself.setApDesc(MyApplication.appInstance.getApDesc());
-                        myself.setApRssi(MyApplication.appInstance.getApRssi());
-                        // 广播自己上线的消息，以便自己及其他用户更新列表
-                        if (binder != null) {
-                            binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
-                        }
-                    }
-                }
-            }
-            // 监测AP的RSSI发生变化
-            if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction())) {
-                boolean updateFlag = false;
-                Log.d(TAG, "Rssi changed.");
-                if (!Util.rssi2Distance(myself.getApRssi()).equals
-                        (Util.rssi2Distance(MyApplication.appInstance.getApRssi()))){
-                    // 转换成的Distance不相同才更新
+            Parcelable parcelableExtra = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+            if (parcelableExtra != null) {
+                NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
+                // 连接上wifi时
+                if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
+                    Log.d(TAG, "new Wifi connected.");
+                    // 同时刷新IP，AP的IP以及RSSI等信息
+                    myself.setIp(MyApplication.appInstance.getLocalIp());
+                    myself.setApDesc(MyApplication.appInstance.getApDesc());
                     myself.setApRssi(MyApplication.appInstance.getApRssi());
-                    Log.d(TAG, "Rssi:" + myself.getApRssi());
-                    updateFlag = true;
-                }
-                // 广播自己上线的消息，以便自己及其他用户更新列表
-                if (binder != null && updateFlag) {
-                    binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
-
-                }
-            } // RSSI_CHANGE_ACTION
+                    // 广播自己上线的消息，以便自己及其他用户更新列表
+                    if (binder != null) {
+                        binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
+                    }
+                } // State.CONNECTED
+            }
         } // onReceive()
     }
 
@@ -461,19 +446,27 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
-        //修改完设置后，刷新自己的名字
+    protected void onResume() {
+        super.onResume();
+        //修改完设置后，MainActivity重新回到前台，刷新自己的名字
         myself.setName(MyApplication.appInstance.getMyName());
         // 同时刷新IP，AP的IP以及RSSI等信息
         myself.setIp(MyApplication.appInstance.getLocalIp());
         myself.setApDesc(MyApplication.appInstance.getApDesc());
         myself.setApRssi(MyApplication.appInstance.getApRssi());
+        myself.setIsRefreshIcon(MyApplication.appInstance.getIsRefreshIcon());
+        Log.d(TAG, "resume: getIsRefreshIcon: " + myself.getIsRefreshIcon());
         // Restart后广播自己上线的消息，以便自己及其他用户更新列表
         if (binder != null) {
+            Log.d(TAG, "resume: refresh icon send ON_LINE");
             binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
+            Editor editor = getSharedPreferences("me", MODE_PRIVATE).edit();
+            // 标记为头像非更新的头像，因已经广播自己的信息
+            editor.putBoolean("is_refresh_icon", false);
+            editor.apply();
+            myself.setIsRefreshIcon(MyApplication.appInstance.getIsRefreshIcon());
+            Log.d(TAG, "resume after send ON_LINE: getIsRefreshIcon: " + myself.getIsRefreshIcon());
         }
-        // sendBroadcast(new Intent(MainActivity.ACTION_REFRESH)) // 刷新列表
     }
 
     @Override

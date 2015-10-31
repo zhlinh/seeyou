@@ -2,9 +2,9 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    buildToolsVersion '21.1.2'
     defaultConfig {
-        applicationId "com.monet.seeyou"
+        applicationId 'com.monet.seeyou'
         minSdkVersion 14
         targetSdkVersion 21
         versionCode 1

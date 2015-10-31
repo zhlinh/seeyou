@@ -16,10 +16,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by Monet on 2015/6/16.
- * Use TCP port 2222
+ * Use TCP port 2225
  */
 
 public class MediaTcpServer{
+    public static final int MEDIA_TCP_PORT = 2225;
     ChatService service = null;
     UdpMessage msg;
     String senderIp;//信息的来源
@@ -47,7 +48,7 @@ public class MediaTcpServer{
         }
 
         public void createServer() throws IOException, Exception{
-            ServerSocket ss =new ServerSocket(2222);
+            ServerSocket ss =new ServerSocket(MEDIA_TCP_PORT);
             Socket s = ss.accept();//开始监听
 
 

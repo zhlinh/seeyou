@@ -7,10 +7,10 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.monet.seeyou.activity.ChatActivity;
+import com.monet.seeyou.activity.MainActivity;
 import com.monet.seeyou.model.UdpMessage;
 import com.monet.seeyou.model.User;
 import com.monet.seeyou.tool.MyApplication;
-import com.monet.seeyou.activity.MainActivity;
 import com.monet.seeyou.util.IconTcpClient;
 import com.monet.seeyou.util.ImageTcpClient;
 import com.monet.seeyou.util.ImageTcpServer;
@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 /**
  * Created by Monet on 2015/6/16.
  */
@@ -48,10 +47,12 @@ public class ChatService extends Service {
     public static final int REQUEST_SEND_MEDIA = 104;
     public static final int REPLY_SEND_MEDIA = 105;
     public static final int RECEIVE_MEDIA = 106;
-    public static final int REQUIRE_ICON = 107;
-    public static final int REQUEST_SEND_IMAGE = 108;
-    public static final int REPLY_SEND_IMAGE = 109;
-    public static final int RECEIVE_IMAGE = 110;
+//    public static final int REQUEST_SEND_ICON = 107;
+    public static final int REPLY_SEND_ICON= 108;
+    public static final int RECEIVE_ICON = 109;
+    public static final int REQUEST_SEND_IMAGE = 110;
+    public static final int REPLY_SEND_IMAGE = 111;
+    public static final int RECEIVE_IMAGE = 112;
 
     private MulticastSocket multicastSocket = null;
     private ExecutorService executor = Executors.newFixedThreadPool(20);// 创建一个固定大小的线程池来发送消息，大小为20个线程
@@ -126,16 +127,17 @@ public class ChatService extends Service {
                     user.setDeviceCode(msg.getDeviceCode());
                     user.setApDesc(msg.getApDesc());
                     user.setApRssi(msg.getApRssi());
+                    user.setIsRefreshIcon(msg.getIsRefreshIcon());
                     Log.d("ReceiveOnLine", user.getIp());
 
                     addUserFlag = false;
-                    if (user.getIp() != null) {
+                    if (MyApplication.appInstance.getLocalIp()!= null && user.getIp() != null) {
                         addUserFlag = true;
                         for (User userTmp : users) {
                             Log.d("UserIP", userTmp.getIp() + " - " + hostAddress);
                             if (userTmp.getIp().equals(hostAddress)) {
                                 addUserFlag = false; // 不添加已存在的用户
-                                // 如果User所连接的AP地址有更新，则更新User信息
+                                // 如果User所连接的AP改变，则更新User信息
                                 // 注意String需要用equals来比较
                                 if (!userTmp.getApDesc().equals(msg.getApDesc())) {
                                     userTmp.setApDesc(msg.getApDesc());
@@ -144,17 +146,27 @@ public class ChatService extends Service {
                                 if (userTmp.getApRssi() != msg.getApRssi()) {
                                     userTmp.setApRssi(msg.getApRssi());
                                 }
+                                // 如果User的名字有更新，则更新User信息
+                                // 注意String需要用equals来比较
+                                if (!userTmp.getName().equals(msg.getSenderName())) {
+                                    userTmp.setName(msg.getSenderName());
+                                }
+                                // 如果User的头像信息有更新，则更新User信息
+                                if (!userTmp.getIsRefreshIcon() == (msg.getIsRefreshIcon())) {
+                                    userTmp.setIsRefreshIcon(msg.getIsRefreshIcon());
+                                }
                                 break;
                             }
                         }
                     }
 
-                    // 如果发送消息的源头不是自己且为新用户，则把它添加到好友列表，并且发送一条REPLY的消息
-                    if (!((MyApplication.appInstance.getLocalIp()).equals(hostAddress)) && addUserFlag) {
+                    // 如果发送消息的源头不是自己且为新用户，则把它添加到好友列表
+                    if (addUserFlag && !((MyApplication.appInstance.getLocalIp()).equals(hostAddress))) {
                         users.add(user);
-                        send(MyApplication.appInstance.generateMyMessage("",
-                                REPLY_ONLINE).toJOString(), hostAddress);
                     }
+                    // 无论是否为新用户，均回复一条REPLY的消息
+                    send(MyApplication.appInstance.generateMyMessage("",
+                                    REPLY_ONLINE).toJOString(), hostAddress);
                     break;
 
                 case REPLY_ONLINE:
@@ -166,12 +178,12 @@ public class ChatService extends Service {
                     user.setApDesc(msg.getApDesc());
                     user.setApRssi(msg.getApRssi());
                     addUserFlag = false;
-                    if (user.getIp() != null) {
+                    if (MyApplication.appInstance.getLocalIp()!= null && user.getIp() != null) {
                         addUserFlag = true;
                         for (User userTmp : users) {
                             if (userTmp.getIp().equals(hostAddress)) {
                                 addUserFlag = false; //不添加已存在的用户
-                                // 如果User所连接的AP地址有更新，则更新User信息
+                                // 如果User所连接的AP改变，则更新User信息
                                 // 注意String需要用equals来比较
                                 if (!userTmp.getApDesc().equals(msg.getApDesc())) {
                                     userTmp.setApDesc(msg.getApDesc());
@@ -180,11 +192,21 @@ public class ChatService extends Service {
                                 if (userTmp.getApRssi() != msg.getApRssi()) {
                                     userTmp.setApRssi(msg.getApRssi());
                                 }
+                                // 如果User的名字有更新，则更新User信息
+                                // 注意String需要用equals来比较
+                                if (!userTmp.getName().equals(msg.getSenderName())) {
+                                    userTmp.setName(msg.getSenderName());
+                                }
+                                // 如果User的头像信息有更新，则更新User信息
+                                if (!userTmp.getIsRefreshIcon() == (msg.getIsRefreshIcon())) {
+                                    userTmp.setIsRefreshIcon(msg.getIsRefreshIcon());
+                                }
                                 break;
                             }
                         }
                     }
-                    if (!((MyApplication.appInstance.getLocalIp()).equals(hostAddress)) && addUserFlag) {
+                    // 如果发送消息的源头不是自己且为新用户，则把它添加到好友列表
+                    if (addUserFlag && !((MyApplication.appInstance.getLocalIp()).equals(hostAddress))) {
                         users.add(user);
                     }
                     break;
@@ -202,7 +224,7 @@ public class ChatService extends Service {
                     break;
 
                 case REQUEST_SEND_MEDIA:
-                    //打开tcp服务端准备接收音频
+                    //打开TCP服务端准备接收音频
                     MediaTcpServer ts = new MediaTcpServer(msg, hostAddress, ChatService.this);
                     ts.start();
 
@@ -211,13 +233,13 @@ public class ChatService extends Service {
                     break;
 
                 case REPLY_SEND_MEDIA:
-                    // 收到回应Media请求的信息后,打开Tcp客户端准备发送音频
-                    MediaTcpClient tc = new MediaTcpClient(msg,hostAddress);
+                    // 收到回应Media请求的信息后,打开TCP客户端准备发送音频
+                    MediaTcpClient tc = new MediaTcpClient(msg, hostAddress);
                     tc.start();
                     break;
 
                 case REQUEST_SEND_IMAGE:
-                    //打开tcp服务端准备接收图像
+                    //打开TCP服务端准备接收图像
                     ImageTcpServer its = new ImageTcpServer(msg, hostAddress, ChatService.this);
                     its.start();
 
@@ -226,15 +248,17 @@ public class ChatService extends Service {
                     break;
 
                 case REPLY_SEND_IMAGE:
-                    // 收到回应Image请求的信息后,打开Tcp客户端准备发送图像
+                    // 收到回应Image请求的信息后,打开TCP客户端准备发送图像
                     ImageTcpClient imtc = new ImageTcpClient(msg, hostAddress);
                     imtc.start();
                     break;
-
-                case REQUIRE_ICON:
+                case REPLY_SEND_ICON:
+                    //打开一个发送头像的TCP客户端
                     IconTcpClient itc = new IconTcpClient(hostAddress);//把自己的头像发送到指定ip
                     itc.start();
-
+                    break;
+                default:
+                    break;
             }
             // 收到任何消息，都会发送一条广播，通知刷新好友列表或聊天列表
             onReceiver(type);
@@ -247,15 +271,18 @@ public class ChatService extends Service {
             // ON_LINE和REPLY_ONLINE为同一处理方式
             case ON_LINE:
             case REPLY_ONLINE:
-//                Log.i("广播", "刷新MainActivity列表界面啦");
+            case RECEIVE_ICON:
+                Log.d("广播", "刷新MainActivity列表界面啦");
                 sendBroadcast(new Intent(MainActivity.ACTION_REFRESH));
                 break;
             // 下面三种type为同一处理方式
             case TEXT_MESSAGE:
             case RECEIVE_MEDIA:
             case RECEIVE_IMAGE:
-                // Log.i("广播", "刷新ChatActivity聊天界面啦");
+                Log.d("广播", "刷新ChatActivity聊天界面啦");
                 sendBroadcast(new Intent(ChatActivity.ACTION_NOTIFY_DATA));
+                break;
+            default:
                 break;
         }
     }
@@ -306,14 +333,15 @@ public class ChatService extends Service {
     }
 
     public class MyBinder extends Binder {
+        public ChatService getService() {
+            return ChatService.this;
+        }
         public List<User> getUsers() {
             return users;
         }
-
         public Map<String, Queue<UdpMessage>> getMessages() {
             return messages;
         }
-
         public void sendMsg(UdpMessage msg, String destIp) {
             send(msg.toJOString(), destIp);
             Log.d("发送者", "点击按钮发送成功");

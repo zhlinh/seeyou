@@ -10,9 +10,10 @@ import java.net.Socket;
 
 /**
  * Created by Monet on 2015/6/16.
- * Use TCP port 2224.
+ * Use TCP port 2224, same as ImageTcpServer.
  */
 public class ImageTcpClient {
+    public static final int IMAGE_TCP_PORT = ImageTcpServer.IMAGE_TCP_PORT;
     UdpMessage msg = null;
     String destIp;//信息的来源
 
@@ -38,7 +39,7 @@ public class ImageTcpClient {
         }
 
         public void createClient() throws Exception{
-            Socket s = new Socket(destIp,2224);
+            Socket s = new Socket(destIp, IMAGE_TCP_PORT);
 
             File file = new File(msg.getMsg());
 

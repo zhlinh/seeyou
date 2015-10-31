@@ -46,6 +46,7 @@ public class MyApplication extends Application {
         message.setDeviceCode(getDeviceCode());
         message.setApDesc(getApDesc());
         message.setApRssi(getApRssi());
+        message.setIsRefreshIcon(getIsRefreshIcon());
         message.setOwn(true);
         message.setSendTime(Util.getDate());
         return message;
@@ -107,6 +108,9 @@ public class MyApplication extends Application {
 
     public String getMyName() {
         return getSharedPreferences("me", MODE_PRIVATE).getString("name", "无名");
+    }
+    public boolean getIsRefreshIcon() {
+        return getSharedPreferences("me", MODE_PRIVATE).getBoolean("is_refresh_icon", false);
     }
     public String getLocalIp(){
         localIp = initLocalIp();

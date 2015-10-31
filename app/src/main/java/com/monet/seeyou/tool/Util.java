@@ -122,7 +122,6 @@ public class Util {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         //检查wifi是否开启
         if (wifiManager.isWifiEnabled()) {
-            wifiManager.startScan();
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             return  (wifiInfo == null) ? -255 : wifiInfo.getRssi();
         }

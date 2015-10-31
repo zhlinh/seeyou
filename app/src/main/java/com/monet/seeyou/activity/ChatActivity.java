@@ -43,7 +43,9 @@ import com.monet.seeyou.model.UdpMessage;
 import com.monet.seeyou.model.User;
 import com.monet.seeyou.service.ChatService;
 import com.monet.seeyou.service.ChatService.MyBinder;
+import com.monet.seeyou.tool.MemoryCache;
 import com.monet.seeyou.tool.MyApplication;
+import com.monet.seeyou.tool.Util;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -52,9 +54,10 @@ import java.util.List;
 import java.util.Queue;
 
 public class ChatActivity extends Activity implements OnClickListener {
+    public static final String TAG = "ChatAct";
     public static final String ACTION_HEARTBEAT = "com.monet.seeyou.heartbeat";
     public static final String ACTION_NOTIFY_DATA = "com.monet.seeyou.notifydata";
-    private TextView chatterNameView, chatterApView, recordHintView;
+    private TextView chatterNameView, recordHintView;
     private ListView listView;
     private Button sendBtn, mediaBtn;
     private Button imageBtn;
@@ -76,10 +79,11 @@ public class ChatActivity extends Activity implements OnClickListener {
 
     private Media media = new Media();  //音频类，进行录音操作
     private String mediaName = null;
-    public static final int REQUEST_SEND_IMAGE = 108;
-    public static final int RECEIVE_MEDIA = 106;
-    public static final int REQUEST_SEND_MEDIA = 104;
-    public static final int TEXT_MESSAGE = 103;
+    public static final int REQUEST_SEND_IMAGE = ChatService.REQUEST_SEND_IMAGE;
+    public static final int RECEIVE_MEDIA = ChatService.RECEIVE_MEDIA;
+    public static final int REQUEST_SEND_MEDIA = ChatService.REQUEST_SEND_MEDIA;
+    public static final int RECEIVE_IMAGE = ChatService.RECEIVE_IMAGE;
+    public static final int TEXT_MESSAGE = ChatService.TEXT_MESSAGE;
     private boolean isVoiceRecording = false;
     private boolean isCanceled = false;
     private float downY;
@@ -285,6 +289,7 @@ public class ChatActivity extends Activity implements OnClickListener {
     private void sendMediaRecord(String name){
         /*mediaName = media.getSendPath() + "/" + name;
 		String m = (new File(mediaName)).getName();*/
+        //发送一条发送音频的请求
         UdpMessage msgTmp = MyApplication.appInstance.generateMyMessage(name, REQUEST_SEND_MEDIA);
         binder.sendMsg(msgTmp, chatter.getIp());
         //发送一条包含文件名的消息 通知 对方准备好接收音频文件
@@ -300,7 +305,7 @@ public class ChatActivity extends Activity implements OnClickListener {
      * 发送图片消息
      */
     private void sendImageMsg(String path){
-        //发送一条即将发送图片的通知
+        //发送一条发送图片的请求
         UdpMessage msgTmp = MyApplication.appInstance.generateMyMessage(path, REQUEST_SEND_IMAGE);
         binder.sendMsg(msgTmp, chatter.getIp());
 
@@ -385,9 +390,9 @@ public class ChatActivity extends Activity implements OnClickListener {
         while (it.hasNext()) {
             message = it.next();
             switch (message.getType()) {
-                case ChatService.TEXT_MESSAGE:
-                case ChatService.RECEIVE_MEDIA:
-                case ChatService.RECEIVE_IMAGE:
+                case TEXT_MESSAGE:
+                case RECEIVE_MEDIA:
+                case RECEIVE_IMAGE:
                     myMessages.add(message);
                     break;
             }
@@ -465,44 +470,43 @@ public class ChatActivity extends Activity implements OnClickListener {
                 viewHolder = new ViewHolder();
                 switch (type) {
                     case owner:
-                        convertView = getLayoutInflater().inflate(
-                                R.layout.chat_my_listview, null);
+                        convertView = getLayoutInflater().inflate( R.layout.chat_my_listview, null);
+                        viewHolder.icon = (ImageView) convertView.findViewById(R.id.chat_my_head);
                         viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
-                        viewHolder.txt = (TextView) convertView
-                                .findViewById(R.id.chat_my_txt);
-                        viewHolder.chatterName = (TextView) convertView
-                                .findViewById(R.id.chat_my_name);
+                        viewHolder.txt = (TextView) convertView .findViewById(R.id.chat_my_txt);
+                        viewHolder.chatterName = (TextView) convertView .findViewById(R.id.chat_my_name);
                         break;
                     case other:
-                        convertView = getLayoutInflater().inflate(
-                                R.layout.chat_other_listview, null);
+                        convertView = getLayoutInflater().inflate( R.layout.chat_other_listview, null);
+                        viewHolder.icon = (ImageView) convertView.findViewById(R.id.chat_other_head);
                         viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
-                        viewHolder.txt = (TextView) convertView
-                                .findViewById(R.id.chat_other_txt);
-                        viewHolder.chatterName = (TextView) convertView
-                                .findViewById(R.id.chat_other_name);
+                        viewHolder.txt = (TextView) convertView .findViewById(R.id.chat_other_txt);
+                        viewHolder.chatterName = (TextView) convertView .findViewById(R.id.chat_other_name);
                         break;
                     case owner_media:
-                        convertView = getLayoutInflater().inflate(
-                                R.layout.chat_my_media_listview, null);
+                        convertView = getLayoutInflater().inflate( R.layout.chat_my_media_listview, null);
+                        viewHolder.icon = (ImageView) convertView.findViewById(R.id.chat_my_head);
                         viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
                         viewHolder.media = (Button) convertView.findViewById(R.id.chat_my_media_button);
                         viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_my_name);
                         break;
                     case other_media:
                         convertView = getLayoutInflater().inflate(R.layout.chat_other_media_listview, null);
+                        viewHolder.icon = (ImageView) convertView.findViewById(R.id.chat_other_head);
                         viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
                         viewHolder.media = (Button) convertView.findViewById(R.id.chat_other_media_button);
                         viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_other_name);
                         break;
                     case owner_image:
                         convertView = getLayoutInflater().inflate(R.layout.chat_my_image_listview, null);
+                        viewHolder.icon = (ImageView) convertView.findViewById(R.id.chat_my_head);
                         viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
                         viewHolder.picture = (ImageView) convertView.findViewById(R.id.chat_my_image);
                         viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_my_name);
                         break;
                     case other_image:
                         convertView = getLayoutInflater().inflate(R.layout.chat_other_image_listview, null);
+                        viewHolder.icon = (ImageView) convertView.findViewById(R.id.chat_other_head);
                         viewHolder.sendTime = (TextView) convertView.findViewById(R.id.send_time);
                         viewHolder.picture = (ImageView) convertView.findViewById(R.id.chat_other_image);
                         viewHolder.chatterName = (TextView) convertView.findViewById(R.id.chat_other_name);
@@ -524,6 +528,7 @@ public class ChatActivity extends Activity implements OnClickListener {
                     String content = message.getMsg();
                     viewHolder.txt.setText(content);
                     viewHolder.chatterName.setText(MyApplication.appInstance.getMyName());
+                    displayMyIcon(viewHolder.icon);
                     break;
                 case other:
                     message = myMessages.get(position);
@@ -531,6 +536,7 @@ public class ChatActivity extends Activity implements OnClickListener {
                     content = message.getMsg();
                     viewHolder.txt.setText(content);
                     viewHolder.chatterName.setText(chatter.getName());
+                    displayChatterIcon(chatter, viewHolder.icon);
                     break;
                 case owner_media:
                     message = myMessages.get(position);
@@ -538,7 +544,6 @@ public class ChatActivity extends Activity implements OnClickListener {
                     final String mediaName = message.getMsg(); //音频的名字
                     MediaPlayer mp = MediaPlayer.create(ChatActivity.this,Uri.parse(media.getSendPath() + "/" + mediaName));
                     int duration = mp.getDuration()/1000;
-
                     viewHolder.media.setText(duration+"\"" + " (((");
                     viewHolder.chatterName.setText(MyApplication.appInstance.getMyName());
                     viewHolder.media.setOnClickListener(new OnClickListener() {
@@ -547,8 +552,8 @@ public class ChatActivity extends Activity implements OnClickListener {
                             media.startPlay(media.getSendPath() + "/" + mediaName);
                         }
                     });
+                    displayMyIcon(viewHolder.icon);
                     break;
-
                 case other_media:
                     message = myMessages.get(position);
                     viewHolder.sendTime.setText(message.getSendTime());
@@ -563,13 +568,12 @@ public class ChatActivity extends Activity implements OnClickListener {
                             media.startPlay(media.getReceivePath()+ "/" + mediaName1);
                         }
                     });
+                    displayChatterIcon(chatter, viewHolder.icon);
                     break;
-
                 case owner_image:
                     message = myMessages.get(position);
                     viewHolder.sendTime.setText(message.getSendTime());
                     String pathTmp = message.getMsg();//图片路径
-
                     //对图片进行缩放
                     Options opts = new Options();
                     opts.inJustDecodeBounds = true;
@@ -588,8 +592,8 @@ public class ChatActivity extends Activity implements OnClickListener {
                     Bitmap bm = BitmapFactory.decodeFile(pathTmp,opts);
                     viewHolder.picture.setImageBitmap(bm);
                     viewHolder.chatterName.setText(MyApplication.appInstance.getMyName());
+                    displayMyIcon(viewHolder.icon);
                     break;
-
                 case other_image:
                     message = myMessages.get(position);
                     viewHolder.sendTime.setText(message.getSendTime());
@@ -613,6 +617,7 @@ public class ChatActivity extends Activity implements OnClickListener {
                     viewHolder.picture.setImageBitmap(bm);
                     Toast.makeText(getApplicationContext(), "接收到图片，保存到" + pathTmp, Toast.LENGTH_LONG);
                     viewHolder.chatterName.setText(chatter.getName());
+                    displayChatterIcon(chatter, viewHolder.icon);
                     break;
             }
             return convertView;
@@ -629,6 +634,49 @@ public class ChatActivity extends Activity implements OnClickListener {
         }
 
     }
+
+    /**
+     *  显示自己的头像
+     */
+    public void displayMyIcon(ImageView imageView) {
+        //自己的头像
+        Bitmap bitmap = MemoryCache.getInstance().get("me");
+        if(bitmap == null){
+            // 缓存中没有图片，则需要从文件中读出
+            bitmap = BitmapFactory.decodeFile(MyApplication.iconPath + "me");
+            if(bitmap != null){
+                //文件中存在
+                imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
+                MemoryCache.getInstance().put("me", bitmap);
+            }
+        }else{
+            // 若缓存中有图片
+            imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
+        }
+    }
+
+    /**
+     * 显示聊天对象的头像
+     */
+     public void displayChatterIcon(User chatter, ImageView imageView) {
+         // 其他用户的头像
+         // 在ChatActivity上不启动IconTcp服务器来更新头像
+         Bitmap bitmap = MemoryCache.getInstance().get(chatter.getDeviceCode());//根据用户的设备码在缓存中寻找对应的头像
+         if (bitmap == null) {
+             //内存中没有,则在文件中查找
+             bitmap = BitmapFactory.decodeFile(MyApplication.iconPath + chatter.getDeviceCode());
+             if (bitmap != null) { //文件中有
+                 imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
+                 MemoryCache.getInstance().put(chatter.getDeviceCode(), bitmap);//放入缓存中
+             } else {
+                 //文件中也没有头像图片
+                 imageView.setImageResource(R.drawable.ic_launcher);
+             }
+         } else {
+             //若缓存中有头像图片
+             imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
+         }
+     }
 
     @Override
     protected void onDestroy() {

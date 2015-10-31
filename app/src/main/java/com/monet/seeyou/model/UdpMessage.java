@@ -20,6 +20,7 @@ public class UdpMessage {
     private int apRssi; //发送者接收到所连接AP的信号强度RSSI
     private int type; //消息的类型
     private boolean own; //判断这条消息是否是自己发送的
+    private boolean isRefreshIcon; // 判断是否为更新的头像
 
     public UdpMessage(){
         setSendTime(System.currentTimeMillis()+"");
@@ -45,6 +46,7 @@ public class UdpMessage {
         setDeviceCode(object.getString("deviceCode"));
         setApDesc(object.getString("apDesc"));
         setApRssi(object.getInt("apRssi"));
+        setIsRefreshIcon(object.getBoolean("isRefreshIcon"));
         type = object.getInt("type");
         object = null;//销毁
     }
@@ -63,6 +65,7 @@ public class UdpMessage {
             object.put("deviceCode", getDeviceCode());
             object.put("apDesc", getApDesc());
             object.put("apRssi", getApRssi());
+            object.put("isRefreshIcon", getIsRefreshIcon());
             object.put("type", type);
             object.put("sendTime", sendTime);
             return object.toString();
@@ -126,5 +129,11 @@ public class UdpMessage {
     }
     public void setApRssi(int apRssi) {
         this.apRssi = apRssi;
+    }
+    public boolean getIsRefreshIcon() {
+        return isRefreshIcon;
+    }
+    public void setIsRefreshIcon(boolean isRefreshIcon) {
+        this.isRefreshIcon = isRefreshIcon;
     }
 }
