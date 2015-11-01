@@ -127,7 +127,7 @@ public class ChatService extends Service {
                     user.setDeviceCode(msg.getDeviceCode());
                     user.setApDesc(msg.getApDesc());
                     user.setApRssi(msg.getApRssi());
-                    user.setIsRefreshIcon(msg.getIsRefreshIcon());
+                    user.setRefreshedIcon(msg.isRefreshedIcon());
                     Log.d("ReceiveOnLine", user.getIp());
 
                     addUserFlag = false;
@@ -152,8 +152,8 @@ public class ChatService extends Service {
                                     userTmp.setName(msg.getSenderName());
                                 }
                                 // 如果User的头像信息有更新，则更新User信息
-                                if (!userTmp.getIsRefreshIcon() == (msg.getIsRefreshIcon())) {
-                                    userTmp.setIsRefreshIcon(msg.getIsRefreshIcon());
+                                if (!userTmp.isRefreshedIcon() == (msg.isRefreshedIcon())) {
+                                    userTmp.setRefreshedIcon(msg.isRefreshedIcon());
                                 }
                                 break;
                             }
@@ -161,14 +161,16 @@ public class ChatService extends Service {
                     }
 
                     // 如果发送消息的源头不是自己且为新用户，则把它添加到好友列表
-                    if (addUserFlag && !((MyApplication.appInstance.getLocalIp()).equals(hostAddress))) {
-                        users.add(user);
+                    if (!((MyApplication.appInstance.getLocalIp()).equals(hostAddress))) {
+                        // 无论是否为新用户，只要是源头非自己，均回复一条REPLY的消息
+                        send(MyApplication.appInstance.generateMyMessage("",
+                                REPLY_ONLINE).toJOString(), hostAddress);
+                        // 如果为新用户，则添加
+                        if (addUserFlag) {
+                            users.add(user);
+                        }
                     }
-                    // 无论是否为新用户，均回复一条REPLY的消息
-                    send(MyApplication.appInstance.generateMyMessage("",
-                                    REPLY_ONLINE).toJOString(), hostAddress);
                     break;
-
                 case REPLY_ONLINE:
                     // 添加新用户
                     user = new User();
@@ -198,8 +200,8 @@ public class ChatService extends Service {
                                     userTmp.setName(msg.getSenderName());
                                 }
                                 // 如果User的头像信息有更新，则更新User信息
-                                if (!userTmp.getIsRefreshIcon() == (msg.getIsRefreshIcon())) {
-                                    userTmp.setIsRefreshIcon(msg.getIsRefreshIcon());
+                                if (!userTmp.isRefreshedIcon() == (msg.isRefreshedIcon())) {
+                                    userTmp.setRefreshedIcon(msg.isRefreshedIcon());
                                 }
                                 break;
                             }
@@ -253,9 +255,11 @@ public class ChatService extends Service {
                     imtc.start();
                     break;
                 case REPLY_SEND_ICON:
-                    //打开一个发送头像的TCP客户端
-                    IconTcpClient itc = new IconTcpClient(hostAddress);//把自己的头像发送到指定ip
-                    itc.start();
+                    // 如果目的地址不是自己，则打开一个发送头像的TCP客户端
+                    if (!((MyApplication.appInstance.getLocalIp()).equals(hostAddress))) {
+                        IconTcpClient itc = new IconTcpClient(hostAddress);//把自己的头像发送到指定ip
+                        itc.start();
+                    }
                     break;
                 default:
                     break;
@@ -338,6 +342,9 @@ public class ChatService extends Service {
         }
         public List<User> getUsers() {
             return users;
+        }
+        public void clearUsers() {
+            users.clear();
         }
         public Map<String, Queue<UdpMessage>> getMessages() {
             return messages;

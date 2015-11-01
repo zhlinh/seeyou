@@ -658,25 +658,25 @@ public class ChatActivity extends Activity implements OnClickListener {
     /**
      * 显示聊天对象的头像
      */
-     public void displayChatterIcon(User chatter, ImageView imageView) {
-         // 其他用户的头像
-         // 在ChatActivity上不启动IconTcp服务器来更新头像
-         Bitmap bitmap = MemoryCache.getInstance().get(chatter.getDeviceCode());//根据用户的设备码在缓存中寻找对应的头像
-         if (bitmap == null) {
-             //内存中没有,则在文件中查找
-             bitmap = BitmapFactory.decodeFile(MyApplication.iconPath + chatter.getDeviceCode());
-             if (bitmap != null) { //文件中有
-                 imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
-                 MemoryCache.getInstance().put(chatter.getDeviceCode(), bitmap);//放入缓存中
-             } else {
-                 //文件中也没有头像图片
-                 imageView.setImageResource(R.drawable.ic_launcher);
-             }
-         } else {
-             //若缓存中有头像图片
-             imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
-         }
-     }
+    public void displayChatterIcon(User chatter, ImageView imageView) {
+        // 其他用户的头像
+        // 在ChatActivity上不启动IconTcp服务器来更新头像
+        Bitmap bitmap = MemoryCache.getInstance().get(chatter.getDeviceCode());//根据用户的设备码在缓存中寻找对应的头像
+        if (bitmap == null) {
+            //内存中没有,则在文件中查找
+            bitmap = BitmapFactory.decodeFile(MyApplication.iconPath + chatter.getDeviceCode());
+            if (bitmap != null) { //文件中有
+                imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
+                MemoryCache.getInstance().put(chatter.getDeviceCode(), bitmap);//放入缓存中
+            } else {
+                //文件中也没有头像图片
+                imageView.setImageResource(R.drawable.ic_launcher);
+            }
+        } else {
+            //若缓存中有头像图片
+            imageView.setImageBitmap(Util.getRoundedCornerBitmap(bitmap));
+        }
+    }
 
     @Override
     protected void onDestroy() {

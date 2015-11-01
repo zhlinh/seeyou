@@ -166,7 +166,7 @@ public class SetActivity extends Activity implements OnClickListener {
                 MemoryCache.getInstance().put(iconName, bitmap);// 加入到缓存中
                 Editor editor = getSharedPreferences("me", MODE_PRIVATE).edit();
                 // 标记为头像为刚更新的头像
-                editor.putBoolean("is_refresh_icon", true);
+                editor.putBoolean("refreshed_icon", true);
                 editor.apply();
                 Toast.makeText(getApplicationContext(), "成功修改头像",
                         Toast.LENGTH_LONG).show();

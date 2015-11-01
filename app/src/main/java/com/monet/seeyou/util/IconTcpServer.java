@@ -1,6 +1,7 @@
 package com.monet.seeyou.util;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.monet.seeyou.service.ChatService;
 import com.monet.seeyou.tool.MemoryCache;
@@ -77,10 +78,11 @@ public class IconTcpServer{
             s.close();
             ss.close();
 
-            // 将接收到的Icon存到缓存中
-            Bitmap bitmap = MemoryCache.getInstance().get(deviceCode);
-            MemoryCache.getInstance().remove(deviceCode); //删除原来的缓存
-            MemoryCache.getInstance().put(deviceCode, bitmap);//放入缓存中
+            // 将接收到的Icon文件存到缓存中
+            Bitmap bitmap1 = BitmapFactory.decodeFile(MyApplication.iconPath + deviceCode);
+            if (bitmap1 != null) {
+                MemoryCache.getInstance().put(deviceCode, bitmap1);//放入缓存中
+            }
             // 调用ChatService的onreceive方法来广播，通知刷新列表
             service.onReceiver(ChatService.RECEIVE_ICON);
         }

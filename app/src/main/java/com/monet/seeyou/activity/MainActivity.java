@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Parcelable;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -55,6 +56,7 @@ public class MainActivity extends Activity {
     public static final String TAG = "MainAct";
     public static final int MESSAGE_PORT = ChatService.MESSAGE_PORT;
     public static final int ON_LINE = ChatService.ON_LINE;
+    public static final int REPLY_SEND_ICON = ChatService.REPLY_SEND_ICON;
     public static final String ACTION_REFRESH= "com.monet.seeyou.refresh";
 /**
  * MuticastSocket 广播的方式，UDP，标识一组D类IP地址
@@ -68,7 +70,10 @@ public class MainActivity extends Activity {
     WifiReceiver wifiReceiver = new WifiReceiver();
     // Adapter
     private UserAdapter adapter;
+    // ListView
     private ListView listView;
+    // 给ListView添加下拉刷新
+    private SwipeRefreshLayout swipeLayout;
 
     // 顶部菜单栏的定位及设置按钮
     private Button locate;
@@ -132,7 +137,7 @@ public class MainActivity extends Activity {
         myself.setDeviceCode(MyApplication.appInstance.getDeviceCode());
         myself.setApDesc(MyApplication.appInstance.getApDesc());
         myself.setApRssi(MyApplication.appInstance.getApRssi());
-        // 清除缓存的头像图片
+        // 初始化时删除所有其他用户头像缓存，以便更新其他用户头像
         MemoryCache.getInstance().removeAll();
         // 注意未连接Wifi时可能出现的空指针问题
         if (myself.getIp() == null) {
@@ -191,7 +196,38 @@ public class MainActivity extends Activity {
      * 初始化用户列表
      */
     private void initUserList() {
+        swipeLayout = (SwipeRefreshLayout) this.findViewById(R.id.swipe_refresh);
         listView = (ListView) findViewById(R.id.user_list);
+
+        /**
+         * 设置下拉刷新的监听事件
+         */
+        swipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+             @Override
+             public void onRefresh() {
+                 Log.d(TAG, "icon 下拉刷新");
+                   myself.setName(MyApplication.appInstance.getMyName());
+                 // 刷新个人信息
+                 myself.setIp(MyApplication.appInstance.getLocalIp());
+                 myself.setApDesc(MyApplication.appInstance.getApDesc());
+                 myself.setApRssi(MyApplication.appInstance.getApRssi());
+                 myself.setRefreshedIcon(MyApplication.appInstance.isRefreshedIcon());
+                 MemoryCache.getInstance().removeAll(); //删除所有用户缓存头像
+                 if (binder != null) {
+                     Log.d(TAG, "icon 更新在线用户");
+                     // 刷新其他用户，并刷新其他用户头像
+                     binder.clearUsers();
+                     // 没有连Wifi，无法通过网络更新列表
+                     if (MyApplication.appInstance.getLocalIp() == null) {
+                         refreshListView();
+                     } else { // 通过Wifi更新列表
+                         binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE),
+                                 "255.255.255.255");
+                     }
+                 }
+                 swipeLayout.setRefreshing(false); // 设置转动的圈或顶部横条停止
+             }
+        });
 
         /**
          * 设置用户列表，使点击用户，进入聊天界面
@@ -304,7 +340,7 @@ public class MainActivity extends Activity {
                 // 其他用户的头像
                 //根据用户的设备码在缓存中寻找对应的头像
                 // 如果不是必须更新头像
-                if (!tmp.getIsRefreshIcon()) {
+                if ((!tmp.isRefreshedIcon())) {
                     Log.d(TAG, "locally getIcon: " + tmp.getIp());
                     Bitmap bitmap1 = MemoryCache.getInstance().get(tmp.getDeviceCode());
                     if (bitmap1 == null) {
@@ -326,11 +362,11 @@ public class MainActivity extends Activity {
                         Log.d(TAG, "getIcon from Cache: " + tmp.getIp());
                         viewHolder.userIcon.setImageBitmap(Util.getRoundedCornerBitmap(bitmap1));
                     }
-                } else { // 如果该用户更新了头像
+                } else { // 如果该用户更新了头像，则强制更新头像
                     Log.d(TAG, "should force updateIcon: " + tmp.getIp());
                     MemoryCache.getInstance().remove(tmp.getDeviceCode()); //删除该用户缓存
                     refreshIcon(tmp); // 开启头像接收的TCP服务器，并对方发送请求头像
-                    tmp.setIsRefreshIcon(false);
+                    tmp.setRefreshedIcon(false);
                 }
             }
             return view;
@@ -346,7 +382,7 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 刷新用户头像
+     * 建立TCPServer，并请求其他用户发送最新的头像
      */
     public void refreshIcon(User userTmp){
         if(binder != null){
@@ -355,7 +391,7 @@ public class MainActivity extends Activity {
             ts.start();
 
             //发送头像请求消息
-            UdpMessage message = MyApplication.appInstance.generateMyMessage("", ChatService.REPLY_SEND_ICON);
+            UdpMessage message = MyApplication.appInstance.generateMyMessage("", REPLY_SEND_ICON);
             binder.sendMsg(message, userTmp.getIp());
         }
     }
@@ -369,32 +405,39 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 广播接收器，接收广播，刷新好友列表
+     * 广播接收器，接收广播，刷新界面
      */
     class RefreshReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(binder != null){
-                users.clear();
-                // 添加自己，方便测试
-                if (myself.getIp() != null) {
-                    users.add(myself);
-                }
-                List<User> list = binder.getUsers();
-                for (int i = 0; i < list.size(); i++){
-                    users.add(list.get(i));
-                }
-                if(adapter == null){
-                    adapter = new UserAdapter(MainActivity.this, R.layout.item_list, users);
-                    listView.setAdapter(adapter);
-                }
-                adapter.notifyDataSetChanged();
-            } else {
-                unbindService(myServiceConnection);
-                binded = false;
-                bindService(new Intent(MainActivity.this, ChatService.class),
-                        myServiceConnection = new MyServiceConnection(), Context.BIND_AUTO_CREATE);
+            refreshListView();
+        }
+    }
+
+    /**
+     * 刷新好友列表
+     */
+    public void refreshListView() {
+        if(binder != null){
+            users.clear();
+            // 添加自己，方便测试
+            if (MyApplication.appInstance.getLocalIp() != null) {
+                users.add(myself);
             }
+            List<User> list = binder.getUsers();
+            for (int i = 0; i < list.size(); i++){
+                users.add(list.get(i));
+            }
+            if(adapter == null){
+                adapter = new UserAdapter(MainActivity.this, R.layout.item_list, users);
+                listView.setAdapter(adapter);
+            }
+            adapter.notifyDataSetChanged();
+        } else {
+            unbindService(myServiceConnection);
+            binded = false;
+            bindService(new Intent(MainActivity.this, ChatService.class),
+                    myServiceConnection = new MyServiceConnection(), Context.BIND_AUTO_CREATE);
         }
     }
 
@@ -417,7 +460,8 @@ public class MainActivity extends Activity {
                     myself.setApRssi(MyApplication.appInstance.getApRssi());
                     // 广播自己上线的消息，以便自己及其他用户更新列表
                     if (binder != null) {
-                        binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
+                        binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE),
+                                "255.255.255.255");
                     }
                 } // State.CONNECTED
             }
@@ -454,18 +498,18 @@ public class MainActivity extends Activity {
         myself.setIp(MyApplication.appInstance.getLocalIp());
         myself.setApDesc(MyApplication.appInstance.getApDesc());
         myself.setApRssi(MyApplication.appInstance.getApRssi());
-        myself.setIsRefreshIcon(MyApplication.appInstance.getIsRefreshIcon());
-        Log.d(TAG, "resume: getIsRefreshIcon: " + myself.getIsRefreshIcon());
+        myself.setRefreshedIcon(MyApplication.appInstance.isRefreshedIcon());
+        Log.d(TAG, "resume: getIsRefreshedIcon: " + myself.isRefreshedIcon());
         // Restart后广播自己上线的消息，以便自己及其他用户更新列表
         if (binder != null) {
             Log.d(TAG, "resume: refresh icon send ON_LINE");
             binder.sendMsg(MyApplication.appInstance.generateMyMessage("", ON_LINE), "255.255.255.255");
             Editor editor = getSharedPreferences("me", MODE_PRIVATE).edit();
             // 标记为头像非更新的头像，因已经广播自己的信息
-            editor.putBoolean("is_refresh_icon", false);
+            editor.putBoolean("refreshed_icon", false);
             editor.apply();
-            myself.setIsRefreshIcon(MyApplication.appInstance.getIsRefreshIcon());
-            Log.d(TAG, "resume after send ON_LINE: getIsRefreshIcon: " + myself.getIsRefreshIcon());
+            myself.setRefreshedIcon(MyApplication.appInstance.isRefreshedIcon());
+            Log.d(TAG, "resume after send ON_LINE: isRefreshedIcon: " + myself.isRefreshedIcon());
         }
     }
 
